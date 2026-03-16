@@ -6,20 +6,20 @@ Nessus self-hosted REST API coverage.
 
 | Resource | SDK Method | API Endpoint | Status |
 |----------|-----------|--------------|:------:|
-| List scans | `ListScans()` | `GET /scans` | |
-| Scan details | `GetScan(id)` | `GET /scans/{id}` | |
+| List scans | `ListScans()` | `GET /scans` | ✅ |
+| Scan details | `GetScan(id)` | `GET /scans/{id}` | ✅ |
 
 ## 🖥️ Hosts
 
 | Resource | SDK Method | API Endpoint | Status |
 |----------|-----------|--------------|:------:|
-| Host details | `GetHostDetails(scanID, hostID)` | `GET /scans/{scan_id}/hosts/{host_id}` | |
+| Host details | `GetHostDetails(scanID, hostID)` | `GET /scans/{scan_id}/hosts/{host_id}` | ✅ |
 
 ## 🛡️ Findings
 
 | Resource | SDK Method | API Endpoint | Status |
 |----------|-----------|--------------|:------:|
-| Plugin output | `GetPluginOutput(scanID, hostID, pluginID)` | `GET /scans/{scan_id}/hosts/{host_id}/plugins/{plugin_id}` | |
+| Plugin output | `GetPluginOutput(scanID, hostID, pluginID)` | `GET /scans/{scan_id}/hosts/{host_id}/plugins/{plugin_id}` | ✅ |
 
 ## 🚫 Not in Scope (v0.1.0)
 

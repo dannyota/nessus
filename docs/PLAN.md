@@ -2,32 +2,32 @@
 
 Development roadmap for nessus.
 
-## 🏗️ Phase 1: Core Client
+## 🏗️ Phase 1: Core Client — ✅ Done
 
 | Component | Description | Status |
 |-----------|-------------|:------:|
-| HTTP client | TLS configuration, base URL | |
-| API key auth | `X-ApiKeys` header on every request | |
-| Functional options | `WithAPIKeys`, `WithInsecureTLS`, `WithTimeout`, `WithTransport`, `WithHTTPClient`, `WithUserAgent` | |
-| Request helper | Internal GET with auth and error handling | |
-| Error types | `ErrAuth`, `ErrNotFound`, `ErrPermission`, `APIError` | |
+| HTTP client | TLS configuration, base URL | ✅ |
+| API key auth | `X-ApiKeys` header on every request | ✅ |
+| Functional options | `WithAPIKeys`, `WithInsecureTLS`, `WithTimeout`, `WithTransport`, `WithHTTPClient`, `WithUserAgent` | ✅ |
+| Request helper | Internal GET with auth and error handling | ✅ |
+| Error types | `ErrAuth`, `ErrNotFound`, `ErrPermission`, `APIError` | ✅ |
 
-## 📦 Phase 2: Resource Methods
+## 📦 Phase 2: Resource Methods — ✅ Done
 
 | Method | Description | Status |
 |--------|-------------|:------:|
-| `ListScans()` | All scans with status, folder, timestamps | |
-| `GetScan(id)` | Scan details including host list | |
-| `GetHostDetails(scanID, hostID)` | Host info with vulnerability list (plugin_id, severity, count) | |
-| `GetPluginOutput(scanID, hostID, pluginID)` | Full finding: synopsis, description, solution, CVSS, CVE, output text | |
+| `ListScans()` | All scans with status, folder, timestamps | ✅ |
+| `GetScan(id)` | Scan details including host list | ✅ |
+| `GetHostDetails(scanID, hostID)` | Host info with vulnerability list (plugin_id, severity, count) | ✅ |
+| `GetPluginOutput(scanID, hostID, pluginID)` | Full finding: synopsis, description, solution, CVSS, CVE, output text | ✅ |
 
-## ✅ Phase 3: Quality
+## ✅ Phase 3: Quality — ✅ Done
 
 | Task | Description | Status |
 |------|-------------|:------:|
-| Unit tests | httptest-based mock server, table-driven tests | |
-| Smoke test | Live scanner test (`go run smoke.go`) | |
-| GoDoc | Comments on all exported types and methods | |
+| Unit tests | httptest-based mock server, table-driven tests | ✅ |
+| Smoke test | Live scanner test (`go run smoke.go`) | ✅ |
+| GoDoc | Comments on all exported types and methods | ✅ |
 
 ## 🔮 Phase 4: Future
 
