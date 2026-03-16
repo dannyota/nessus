@@ -52,7 +52,7 @@ type HostVulnerability struct {
 	PluginID     int
 	PluginName   string
 	PluginFamily string
-	Severity     int    // 0=info, 1=low, 2=medium, 3=high, 4=critical
+	Severity     int    // SeverityInfo through SeverityCritical
 	Count        int
 }
 
@@ -86,12 +86,15 @@ type ExportResult struct {
 
 // ExportHost contains all findings for one host from an export.
 type ExportHost struct {
-	IP       string
-	FQDN     string
-	Hostname string
-	OS       string
-	MAC      string
-	Findings []Finding
+	IP             string
+	FQDN           string
+	Hostname       string
+	NetBIOSName    string
+	OS             string
+	MAC            string
+	StartTimestamp int64 // Unix timestamp, 0 if unavailable
+	EndTimestamp   int64 // Unix timestamp, 0 if unavailable
+	Findings       []Finding
 }
 
 // Finding is a single vulnerability with full detail from an export.
@@ -100,7 +103,7 @@ type Finding struct {
 	PluginID     int
 	PluginName   string
 	PluginFamily string
-	Severity     int    // 0=info, 1=low, 2=medium, 3=high, 4=critical
+	Severity     int    // SeverityInfo through SeverityCritical
 	Port         string // "443", "0" for local checks
 	Protocol     string // "tcp", "udp"
 	Service      string // "www", "ssh", etc.
@@ -108,7 +111,7 @@ type Finding struct {
 	Synopsis    string
 	Description string
 	Solution    string
-	SeeAlso     string
+	SeeAlso     []string
 	RiskFactor  string
 	Output      string // evidence text ("Remote package installed: X, Should be: Y")
 
@@ -131,7 +134,7 @@ type PluginInfo struct {
 	Synopsis     string
 	Description  string
 	Solution     string
-	SeeAlso      string
+	SeeAlso      []string
 	RiskFactor   string
 	CVE          []string
 	BID          []string

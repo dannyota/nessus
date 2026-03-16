@@ -50,16 +50,16 @@ func TestGetHostDetails(t *testing.T) {
 	if v.PluginFamily != "General" {
 		t.Errorf("PluginFamily = %q", v.PluginFamily)
 	}
-	if v.Severity != 4 {
-		t.Errorf("Severity = %d, want 4", v.Severity)
+	if v.Severity != SeverityCritical {
+		t.Errorf("Severity = %d, want SeverityCritical", v.Severity)
 	}
 	if v.Count != 1 {
 		t.Errorf("Count = %d", v.Count)
 	}
 
 	v2 := vulns[1]
-	if v2.Severity != 2 {
-		t.Errorf("Severity = %d, want 2", v2.Severity)
+	if v2.Severity != SeverityMedium {
+		t.Errorf("Severity = %d, want SeverityMedium", v2.Severity)
 	}
 }
 

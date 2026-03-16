@@ -41,7 +41,16 @@ Development roadmap for nessus.
 | Smoke test | Live scanner test (`go run smoke.go`) | ✅ |
 | GoDoc | Comments on all exported types and methods | ✅ |
 
-## 🔮 Phase 5: Future
+## 🔧 Phase 5: Polish
+
+| Task | Description | Status |
+|------|-------------|:------:|
+| Host properties | Parse `netbios-name`, `HOST_START_TIMESTAMP`, `HOST_END_TIMESTAMP` into `ExportHost` | |
+| SeeAlso as `[]string` | Change `SeeAlso` from `string` to `[]string` in `Finding` and `PluginInfo` | |
+| MinSeverity filter | `WithMinSeverity(level)` export option to skip info/low findings during parse | |
+| Test data hygiene | Remove any real hostnames, IPs, or credentials from test fixtures | |
+
+## 🔮 Phase 6: Future
 
 Candidates — add as needed:
 

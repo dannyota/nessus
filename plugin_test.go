@@ -72,8 +72,8 @@ func TestGetPluginOutput(t *testing.T) {
 		t.Errorf("Output = %q", result.Output)
 	}
 
-	if _, ok := result.Ports["443 / tcp / www"]; !ok {
-		t.Error("missing port 443 / tcp / www")
+	if len(result.Ports) != 0 {
+		t.Errorf("Ports = %v, want empty (no port entries in fixture)", result.Ports)
 	}
 
 	info := result.Info
@@ -112,6 +112,9 @@ func TestGetPluginOutput(t *testing.T) {
 	}
 	if len(info.XREF) != 1 || info.XREF[0] != "cwe:295" {
 		t.Errorf("XREF = %v, want [cwe:295]", info.XREF)
+	}
+	if len(info.SeeAlso) != 1 || info.SeeAlso[0] != "https://example.com/docs" {
+		t.Errorf("SeeAlso = %v", info.SeeAlso)
 	}
 }
 
@@ -161,8 +164,8 @@ func TestGetPluginOutput_SeeAlsoArray(t *testing.T) {
 	if result.Info.Name != "RHEL 9 : example" {
 		t.Errorf("Name = %q (should use plugin_name from attrs)", result.Info.Name)
 	}
-	if result.Info.Severity != 3 {
-		t.Errorf("Severity = %d", result.Info.Severity)
+	if result.Info.Severity != SeverityHigh {
+		t.Errorf("Severity = %d, want SeverityHigh", result.Info.Severity)
 	}
 	if result.Info.RiskFactor != "High" {
 		t.Errorf("RiskFactor = %q", result.Info.RiskFactor)
@@ -173,8 +176,8 @@ func TestGetPluginOutput_SeeAlsoArray(t *testing.T) {
 	if result.Info.CVSS3BaseScore != 8.8 {
 		t.Errorf("CVSS3BaseScore = %f", result.Info.CVSS3BaseScore)
 	}
-	if result.Info.SeeAlso != "https://example.com/1\nhttps://example.com/2" {
-		t.Errorf("SeeAlso = %q", result.Info.SeeAlso)
+	if len(result.Info.SeeAlso) != 2 || result.Info.SeeAlso[0] != "https://example.com/1" {
+		t.Errorf("SeeAlso = %v", result.Info.SeeAlso)
 	}
 	if len(result.Info.CVE) != 1 || result.Info.CVE[0] != "CVE-2025-0001" {
 		t.Errorf("CVE = %v", result.Info.CVE)
@@ -213,8 +216,8 @@ func TestGetPluginOutput_NoOutput(t *testing.T) {
 	if result.Output != "" {
 		t.Errorf("Output = %q, want empty", result.Output)
 	}
-	if result.Info.Severity != 0 {
-		t.Errorf("Severity = %d, want 0", result.Info.Severity)
+	if result.Info.Severity != SeverityInfo {
+		t.Errorf("Severity = %d, want SeverityInfo", result.Info.Severity)
 	}
 	if result.Info.RiskFactor != "None" {
 		t.Errorf("RiskFactor = %q", result.Info.RiskFactor)

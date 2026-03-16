@@ -24,7 +24,7 @@ type apiHostVulnerability struct {
 	Count        int    `json:"count"`
 }
 
-// GetHostDetails retrieves host details and its vulnerability list for a scan.
+// GetHostDetails retrieves the vulnerability list for a specific host in a scan.
 func (c *Client) GetHostDetails(ctx context.Context, scanID, hostID int) ([]HostVulnerability, error) {
 	var resp apiHostDetail
 	if err := c.getJSON(ctx, fmt.Sprintf("/scans/%d/hosts/%d", scanID, hostID), &resp); err != nil {

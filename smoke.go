@@ -99,11 +99,12 @@ func main() {
 	w.Flush()
 	fmt.Println()
 
-	// Find the smallest completed scan for export testing.
+	// Use the first (latest) completed scan.
 	var exportScanID int
 	for _, s := range scans {
 		if s.Status == "completed" {
 			exportScanID = s.ID
+			break
 		}
 	}
 	if exportScanID == 0 {
@@ -148,10 +149,10 @@ func main() {
 		for _, h := range firstN(result.Hosts, 20) {
 			crit, high := 0, 0
 			for _, f := range h.Findings {
-				if f.Severity == 4 {
+				if f.Severity == nessus.SeverityCritical {
 					crit++
 				}
-				if f.Severity == 3 {
+				if f.Severity == nessus.SeverityHigh {
 					high++
 				}
 			}
@@ -164,11 +165,11 @@ func main() {
 		// Show first critical finding with evidence.
 		for _, h := range result.Hosts {
 			for _, f := range h.Findings {
-				if f.Severity >= 3 && f.Output != "" {
+				if f.Severity >= nessus.SeverityHigh && f.Output != "" {
 					fmt.Printf("=== Example Finding ===\n")
 					fmt.Printf("  Host: %s (%s)\n", h.Hostname, h.IP)
 					fmt.Printf("  Plugin: %d - %s\n", f.PluginID, f.PluginName)
-					fmt.Printf("  Severity: %d (%s)\n", f.Severity, f.RiskFactor)
+					fmt.Printf("  Severity: %s, Risk Factor: %s\n", nessus.SeverityName(f.Severity), f.RiskFactor)
 					fmt.Printf("  CVSS: %.1f  CVSS3: %.1f\n", f.CVSSBaseScore, f.CVSS3BaseScore)
 					if len(f.CVE) > 0 {
 						fmt.Printf("  CVEs: %v\n", f.CVE)

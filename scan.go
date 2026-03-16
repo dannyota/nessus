@@ -16,8 +16,8 @@ type apiScan struct {
 	FolderID        int    `json:"folder_id"`
 	Enabled         bool   `json:"enabled"`
 	Control         bool   `json:"control"`
-	StartDate       string `json:"starttime"`
-	EndDate         string `json:"endtime"`
+	StartTime       any    `json:"starttime"`
+	EndTime         any    `json:"endtime"`
 	LastModified    int64  `json:"last_modification_date"`
 	CreationDate    int64  `json:"creation_date"`
 	UserPermissions int    `json:"user_permissions"`
@@ -68,6 +68,8 @@ func (c *Client) ListScans(ctx context.Context) ([]Scan, error) {
 			FolderID:        s.FolderID,
 			Enabled:         s.Enabled,
 			Control:         s.Control,
+			StartTime:       toInt64(s.StartTime),
+			EndTime:         toInt64(s.EndTime),
 			LastModified:    s.LastModified,
 			CreationDate:    s.CreationDate,
 			UserPermissions: s.UserPermissions,

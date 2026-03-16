@@ -5,7 +5,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"strconv"
-	"strings"
 )
 
 // XML structures for Nessus export format.
@@ -39,12 +38,12 @@ type xmlReportItem struct {
 	Protocol     string `xml:"protocol,attr"`
 	SvcName      string `xml:"svc_name,attr"`
 
-	Synopsis     string   `xml:"synopsis"`
-	Description  string   `xml:"description"`
-	Solution     string   `xml:"solution"`
-	PluginOutput string   `xml:"plugin_output"`
-	SeeAlso      string   `xml:"see_also"`
-	RiskFactor   string   `xml:"risk_factor"`
+	Synopsis     string `xml:"synopsis"`
+	Description  string `xml:"description"`
+	Solution     string `xml:"solution"`
+	PluginOutput string `xml:"plugin_output"`
+	SeeAlso      string `xml:"see_also"`
+	RiskFactor   string `xml:"risk_factor"`
 
 	CVSSBaseScore  string `xml:"cvss_base_score"`
 	CVSSVector     string `xml:"cvss_vector"`
@@ -59,7 +58,14 @@ type xmlReportItem struct {
 // ParseNessusXML parses a Nessus XML export into structured types.
 // The result contains the same data as calling GetHostDetails + GetPluginOutput
 // for every host, but from a single bulk download.
-func ParseNessusXML(data []byte) (*ExportResult, error) {
+//
+// Use minSeverity to filter findings: 0=all, 1=low+, 2=medium+, 3=high+, 4=critical only.
+func ParseNessusXML(data []byte, minSeverity ...int) (*ExportResult, error) {
+	minSev := 0
+	if len(minSeverity) > 0 {
+		minSev = minSeverity[0]
+	}
+
 	var doc xmlNessusClientData
 	if err := xml.NewDecoder(bytes.NewReader(data)).Decode(&doc); err != nil {
 		return nil, fmt.Errorf("nessus: parse XML: %w", err)
@@ -71,14 +77,14 @@ func ParseNessusXML(data []byte) (*ExportResult, error) {
 	}
 
 	for _, h := range doc.Report.Hosts {
-		host := convertXMLHost(h)
+		host := convertXMLHost(h, minSev)
 		result.Hosts = append(result.Hosts, host)
 	}
 
 	return result, nil
 }
 
-func convertXMLHost(h xmlReportHost) ExportHost {
+func convertXMLHost(h xmlReportHost, minSeverity int) ExportHost {
 	host := ExportHost{
 		Hostname: h.Name,
 	}
@@ -93,20 +99,29 @@ func convertXMLHost(h xmlReportHost) ExportHost {
 			host.OS = prop.Value
 		case "mac-address":
 			host.MAC = prop.Value
+		case "netbios-name":
+			host.NetBIOSName = prop.Value
+		case "HOST_START_TIMESTAMP":
+			host.StartTimestamp, _ = strconv.ParseInt(prop.Value, 10, 64)
+		case "HOST_END_TIMESTAMP":
+			host.EndTimestamp, _ = strconv.ParseInt(prop.Value, 10, 64)
 		}
 	}
 
 	host.Findings = make([]Finding, 0, len(h.ReportItems))
 	for _, item := range h.ReportItems {
-		host.Findings = append(host.Findings, convertXMLReportItem(item))
+		severity, _ := strconv.Atoi(item.Severity)
+		if severity < minSeverity {
+			continue
+		}
+		host.Findings = append(host.Findings, convertXMLReportItem(item, severity))
 	}
 
 	return host
 }
 
-func convertXMLReportItem(item xmlReportItem) Finding {
+func convertXMLReportItem(item xmlReportItem, severity int) Finding {
 	pluginID, _ := strconv.Atoi(item.PluginID)
-	severity, _ := strconv.Atoi(item.Severity)
 
 	f := Finding{
 		PluginID:     pluginID,
@@ -120,7 +135,7 @@ func convertXMLReportItem(item xmlReportItem) Finding {
 		Synopsis:    item.Synopsis,
 		Description: item.Description,
 		Solution:    item.Solution,
-		SeeAlso:     item.SeeAlso,
+		SeeAlso:     splitSeeAlso(item.SeeAlso),
 		RiskFactor:  item.RiskFactor,
 		Output:      item.PluginOutput,
 
@@ -139,9 +154,6 @@ func convertXMLReportItem(item xmlReportItem) Finding {
 	if len(item.XREF) > 0 {
 		f.XREF = item.XREF
 	}
-
-	// Normalize see_also: split on newlines if it contains multiple URLs.
-	f.SeeAlso = strings.TrimSpace(f.SeeAlso)
 
 	return f
 }

@@ -12,14 +12,24 @@ type ExportOption interface {
 }
 
 type exportConfig struct {
-	historyID int
+	historyID   int
+	minSeverity int
 }
 
-// WithHistoryID exports a specific historical scan run instead of the latest.
 type withHistoryID struct{ id int }
 
 func (o withHistoryID) apply(c *exportConfig) { c.historyID = o.id }
-func WithHistoryID(id int) ExportOption       { return withHistoryID{id} }
+
+// WithHistoryID exports a specific historical scan run instead of the latest.
+func WithHistoryID(id int) ExportOption { return withHistoryID{id} }
+
+type withMinSeverity struct{ level int }
+
+func (o withMinSeverity) apply(c *exportConfig) { c.minSeverity = o.level }
+
+// WithMinSeverity filters findings during XML parsing.
+// 0=all (default), 1=low+, 2=medium+, 3=high+, 4=critical only.
+func WithMinSeverity(level int) ExportOption { return withMinSeverity{level} }
 
 type apiExportRequest struct {
 	Format string `json:"format"`
@@ -35,7 +45,7 @@ type apiExportStatus struct {
 }
 
 // ExportScan requests a scan export in Nessus XML format.
-// Returns a token used to poll status and download the export.
+// Returns an identifier (token or file ID) used to poll status and download the export.
 func (c *Client) ExportScan(ctx context.Context, scanID int, opts ...ExportOption) (string, error) {
 	cfg := exportConfig{}
 	for _, o := range opts {
@@ -62,6 +72,9 @@ func (c *Client) ExportScan(ctx context.Context, scanID int, opts ...ExportOptio
 // ExportStatus checks if an export is ready for download.
 // Returns "ready" or "loading".
 func (c *Client) ExportStatus(ctx context.Context, token string) (string, error) {
+	if !validToken(token) {
+		return "", fmt.Errorf("nessus: invalid export token")
+	}
 	var resp apiExportStatus
 	if err := c.getJSON(ctx, fmt.Sprintf("/tokens/%s/status", token), &resp); err != nil {
 		return "", err
@@ -71,13 +84,44 @@ func (c *Client) ExportStatus(ctx context.Context, token string) (string, error)
 
 // DownloadExport downloads a completed export as raw bytes.
 func (c *Client) DownloadExport(ctx context.Context, token string) ([]byte, error) {
+	if !validToken(token) {
+		return nil, fmt.Errorf("nessus: invalid export token")
+	}
 	return c.get(ctx, fmt.Sprintf("/tokens/%s/download", token))
+}
+
+// validToken checks that a token contains only safe characters (alphanumeric, dash).
+func validToken(token string) bool {
+	if token == "" {
+		return false
+	}
+	for _, r := range token {
+		if !(r >= 'a' && r <= 'z') && !(r >= 'A' && r <= 'Z') && !(r >= '0' && r <= '9') && r != '-' {
+			return false
+		}
+	}
+	return true
 }
 
 // ExportAndWait exports a scan, polls until ready, downloads, and parses the result.
 // This is the recommended way to bulk-fetch all findings for a scan.
+//
+// Use WithMinSeverity to filter findings during parsing:
+//
+//	result, err := client.ExportAndWait(ctx, scanID, nessus.WithMinSeverity(3)) // high+ only
 func (c *Client) ExportAndWait(ctx context.Context, scanID int, opts ...ExportOption) (*ExportResult, error) {
-	token, err := c.ExportScan(ctx, scanID, opts...)
+	cfg := exportConfig{}
+	for _, o := range opts {
+		o.apply(&cfg)
+	}
+
+	// Pass only export-relevant options to ExportScan (historyID).
+	var exportOpts []ExportOption
+	if cfg.historyID > 0 {
+		exportOpts = append(exportOpts, WithHistoryID(cfg.historyID))
+	}
+
+	token, err := c.ExportScan(ctx, scanID, exportOpts...)
 	if err != nil {
 		return nil, fmt.Errorf("nessus: export scan: %w", err)
 	}
@@ -94,7 +138,7 @@ func (c *Client) ExportAndWait(ctx context.Context, scanID int, opts ...ExportOp
 
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			return nil, fmt.Errorf("nessus: export wait: %w", ctx.Err())
 		case <-time.After(2 * time.Second):
 		}
 	}
@@ -104,5 +148,5 @@ func (c *Client) ExportAndWait(ctx context.Context, scanID int, opts ...ExportOp
 		return nil, fmt.Errorf("nessus: download export: %w", err)
 	}
 
-	return ParseNessusXML(data)
+	return ParseNessusXML(data, cfg.minSeverity)
 }

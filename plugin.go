@@ -83,9 +83,6 @@ func (c *Client) GetPluginOutput(ctx context.Context, scanID, hostID, pluginID i
 			result.Output += entry.Output
 		}
 		for port, infos := range entry.Ports {
-			if _, ok := result.Ports[port]; !ok {
-				result.Ports[port] = nil
-			}
 			for _, p := range infos {
 				result.Ports[port] = append(result.Ports[port], PortInfo{
 					Port:   p.Port,
