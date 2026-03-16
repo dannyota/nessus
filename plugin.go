@@ -25,24 +25,29 @@ type apiPluginInfo struct {
 }
 
 type apiPluginDetails struct {
-	PluginID       any                    `json:"pluginid"`
-	Name           string                 `json:"pluginname"`
-	Family         string                 `json:"pluginfamily"`
-	Severity       any                    `json:"severity"`
-	PluginAttrs    apiPluginAttrs         `json:"pluginattributes"`
+	PluginID    any            `json:"pluginid"`
+	Name        string         `json:"pluginname"`
+	Family      string         `json:"pluginfamily"`
+	Severity    any            `json:"severity"`
+	PluginAttrs apiPluginAttrs `json:"pluginattributes"`
 }
 
 type apiPluginAttrs struct {
-	Synopsis       string  `json:"synopsis"`
-	Description    string  `json:"description"`
-	Solution       string  `json:"solution"`
-	SeeAlso        any     `json:"see_also"`
-	RiskFactor     string  `json:"risk_factor"`
-	CVSSVector     string  `json:"cvss_vector"`
-	CVSSBaseScore  string  `json:"cvss_base_score"`
-	CVSS3Vector    string  `json:"cvss3_vector"`
-	CVSS3BaseScore string  `json:"cvss3_base_score"`
-	RefInfo        apiRefInfo `json:"ref_information"`
+	PluginName string          `json:"plugin_name"`
+	Synopsis   string          `json:"synopsis"`
+	Description string         `json:"description"`
+	Solution   string          `json:"solution"`
+	SeeAlso    any             `json:"see_also"`
+	RiskInfo   apiRiskInfo     `json:"risk_information"`
+	RefInfo    apiRefInfo      `json:"ref_information"`
+}
+
+type apiRiskInfo struct {
+	RiskFactor     string `json:"risk_factor"`
+	CVSSVector     string `json:"cvss_vector"`
+	CVSSBaseScore  string `json:"cvss_base_score"`
+	CVSS3Vector    string `json:"cvss3_vector"`
+	CVSS3BaseScore string `json:"cvss3_base_score"`
 }
 
 type apiRefInfo struct {
@@ -50,12 +55,12 @@ type apiRefInfo struct {
 }
 
 type apiRef struct {
-	Name   string      `json:"name"`
-	Values []apiRefVal `json:"value"`
+	Name   string       `json:"name"`
+	Values apiRefValues `json:"values"`
 }
 
-type apiRefVal struct {
-	Value string `json:"value"`
+type apiRefValues struct {
+	Value []string `json:"value"`
 }
 
 // GetPluginOutput retrieves detailed finding output for a specific plugin on a host.
@@ -93,20 +98,23 @@ func (c *Client) GetPluginOutput(ctx context.Context, scanID, hostID, pluginID i
 	// Extract plugin info.
 	d := resp.Info.PluginDetails
 	a := d.PluginAttrs
+	r := a.RiskInfo
+
+	// Plugin name: prefer pluginattributes.plugin_name, fall back to top-level pluginname.
+	name := a.PluginName
+	if name == "" {
+		name = d.Name
+	}
 
 	var cves, bids, xrefs []string
 	for _, ref := range a.RefInfo.Refs {
-		vals := make([]string, len(ref.Values))
-		for i, v := range ref.Values {
-			vals[i] = v.Value
-		}
 		switch ref.Name {
 		case "cve":
-			cves = vals
+			cves = ref.Values.Value
 		case "bid":
-			bids = vals
+			bids = ref.Values.Value
 		default:
-			for _, v := range vals {
+			for _, v := range ref.Values.Value {
 				xrefs = append(xrefs, ref.Name+":"+v)
 			}
 		}
@@ -114,21 +122,21 @@ func (c *Client) GetPluginOutput(ctx context.Context, scanID, hostID, pluginID i
 
 	result.Info = PluginInfo{
 		PluginID:       toInt(d.PluginID),
-		Name:           d.Name,
+		Name:           name,
 		Family:         d.Family,
 		Severity:       toInt(d.Severity),
 		Synopsis:       a.Synopsis,
 		Description:    a.Description,
 		Solution:       a.Solution,
 		SeeAlso:        toSeeAlso(a.SeeAlso),
-		RiskFactor:     a.RiskFactor,
+		RiskFactor:     r.RiskFactor,
 		CVE:            cves,
 		BID:            bids,
 		XREF:           xrefs,
-		CVSSVector:     a.CVSSVector,
-		CVSSBaseScore:  parseFloat(a.CVSSBaseScore),
-		CVSS3Vector:    a.CVSS3Vector,
-		CVSS3BaseScore: parseFloat(a.CVSS3BaseScore),
+		CVSSVector:     r.CVSSVector,
+		CVSSBaseScore:  parseFloat(r.CVSSBaseScore),
+		CVSS3Vector:    r.CVSS3Vector,
+		CVSS3BaseScore: parseFloat(r.CVSS3BaseScore),
 	}
 
 	return result, nil

@@ -23,29 +23,37 @@ func TestGetPluginOutput(t *testing.T) {
 					"pluginfamily": "General",
 					"severity": 4,
 					"pluginattributes": {
+						"plugin_name": "SSL Certificate Expired",
 						"synopsis": "The remote SSL certificate has expired.",
 						"description": "The X.509 certificate chain used by this service has expired.",
 						"solution": "Purchase or generate a new SSL certificate.",
 						"see_also": "https://example.com/docs",
-						"risk_factor": "Critical",
-						"cvss_vector": "CVSS2#AV:N/AC:L/Au:N/C:N/I:N/A:N",
-						"cvss_base_score": "5.0",
-						"cvss3_vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N",
-						"cvss3_base_score": "5.3",
+						"risk_information": {
+							"risk_factor": "Critical",
+							"cvss_vector": "CVSS2#AV:N/AC:L/Au:N/C:N/I:N/A:N",
+							"cvss_base_score": "5.0",
+							"cvss3_vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N",
+							"cvss3_base_score": "5.3"
+						},
 						"ref_information": {
 							"ref": [
 								{
 									"name": "cve",
-									"value": [
-										{"value": "CVE-2023-1234"},
-										{"value": "CVE-2023-5678"}
-									]
+									"values": {
+										"value": ["CVE-2023-1234", "CVE-2023-5678"]
+									}
 								},
 								{
 									"name": "bid",
-									"value": [
-										{"value": "12345"}
-									]
+									"values": {
+										"value": ["12345"]
+									}
+								},
+								{
+									"name": "cwe",
+									"values": {
+										"value": ["295"]
+									}
 								}
 							]
 						}
@@ -90,6 +98,9 @@ func TestGetPluginOutput(t *testing.T) {
 	if info.CVSS3BaseScore != 5.3 {
 		t.Errorf("CVSS3BaseScore = %f", info.CVSS3BaseScore)
 	}
+	if info.CVSSVector != "CVSS2#AV:N/AC:L/Au:N/C:N/I:N/A:N" {
+		t.Errorf("CVSSVector = %q", info.CVSSVector)
+	}
 	if len(info.CVE) != 2 {
 		t.Fatalf("len(CVE) = %d, want 2", len(info.CVE))
 	}
@@ -99,24 +110,40 @@ func TestGetPluginOutput(t *testing.T) {
 	if len(info.BID) != 1 {
 		t.Fatalf("len(BID) = %d, want 1", len(info.BID))
 	}
+	if len(info.XREF) != 1 || info.XREF[0] != "cwe:295" {
+		t.Errorf("XREF = %v, want [cwe:295]", info.XREF)
+	}
 }
 
-func TestGetPluginOutput_NoOutput(t *testing.T) {
+func TestGetPluginOutput_SeeAlsoArray(t *testing.T) {
 	client := newTestClient(t, map[string]string{
 		"/scans/42/hosts/1/plugins/99999": `{
 			"outputs": [],
 			"info": {
 				"plugindescription": {
-					"pluginid": 99999,
-					"pluginname": "Info Plugin",
-					"pluginfamily": "General",
-					"severity": 0,
+					"pluginid": "99999",
+					"pluginname": "",
+					"pluginfamily": "Red Hat Local Security Checks",
+					"severity": "3",
 					"pluginattributes": {
-						"synopsis": "Informational.",
-						"description": "This is informational.",
-						"solution": "n/a",
-						"risk_factor": "None",
-						"ref_information": {"ref": []}
+						"plugin_name": "RHEL 9 : example",
+						"synopsis": "Missing security update.",
+						"description": "Desc.",
+						"solution": "Update.",
+						"see_also": ["https://example.com/1", "https://example.com/2"],
+						"risk_information": {
+							"risk_factor": "High",
+							"cvss_base_score": "10.0",
+							"cvss3_base_score": "8.8"
+						},
+						"ref_information": {
+							"ref": [
+								{
+									"name": "cve",
+									"values": {"value": ["CVE-2025-0001"]}
+								}
+							]
+						}
 					}
 				}
 			}
@@ -124,6 +151,61 @@ func TestGetPluginOutput_NoOutput(t *testing.T) {
 	})
 
 	result, err := client.GetPluginOutput(context.Background(), 42, 1, 99999)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if result.Info.PluginID != 99999 {
+		t.Errorf("PluginID = %d", result.Info.PluginID)
+	}
+	if result.Info.Name != "RHEL 9 : example" {
+		t.Errorf("Name = %q (should use plugin_name from attrs)", result.Info.Name)
+	}
+	if result.Info.Severity != 3 {
+		t.Errorf("Severity = %d", result.Info.Severity)
+	}
+	if result.Info.RiskFactor != "High" {
+		t.Errorf("RiskFactor = %q", result.Info.RiskFactor)
+	}
+	if result.Info.CVSSBaseScore != 10.0 {
+		t.Errorf("CVSSBaseScore = %f", result.Info.CVSSBaseScore)
+	}
+	if result.Info.CVSS3BaseScore != 8.8 {
+		t.Errorf("CVSS3BaseScore = %f", result.Info.CVSS3BaseScore)
+	}
+	if result.Info.SeeAlso != "https://example.com/1\nhttps://example.com/2" {
+		t.Errorf("SeeAlso = %q", result.Info.SeeAlso)
+	}
+	if len(result.Info.CVE) != 1 || result.Info.CVE[0] != "CVE-2025-0001" {
+		t.Errorf("CVE = %v", result.Info.CVE)
+	}
+}
+
+func TestGetPluginOutput_NoOutput(t *testing.T) {
+	client := newTestClient(t, map[string]string{
+		"/scans/42/hosts/1/plugins/11111": `{
+			"outputs": [],
+			"info": {
+				"plugindescription": {
+					"pluginid": 11111,
+					"pluginname": "Info Plugin",
+					"pluginfamily": "General",
+					"severity": 0,
+					"pluginattributes": {
+						"synopsis": "Informational.",
+						"description": "This is informational.",
+						"solution": "n/a",
+						"risk_information": {
+							"risk_factor": "None"
+						},
+						"ref_information": {"ref": []}
+					}
+				}
+			}
+		}`,
+	})
+
+	result, err := client.GetPluginOutput(context.Background(), 42, 1, 11111)
 	if err != nil {
 		t.Fatal(err)
 	}
