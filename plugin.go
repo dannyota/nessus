@@ -25,10 +25,10 @@ type apiPluginInfo struct {
 }
 
 type apiPluginDetails struct {
-	PluginID       int                    `json:"pluginid"`
+	PluginID       any                    `json:"pluginid"`
 	Name           string                 `json:"pluginname"`
 	Family         string                 `json:"pluginfamily"`
-	Severity       int                    `json:"severity"`
+	Severity       any                    `json:"severity"`
 	PluginAttrs    apiPluginAttrs         `json:"pluginattributes"`
 }
 
@@ -36,7 +36,7 @@ type apiPluginAttrs struct {
 	Synopsis       string  `json:"synopsis"`
 	Description    string  `json:"description"`
 	Solution       string  `json:"solution"`
-	SeeAlso        string  `json:"see_also"`
+	SeeAlso        any     `json:"see_also"`
 	RiskFactor     string  `json:"risk_factor"`
 	CVSSVector     string  `json:"cvss_vector"`
 	CVSSBaseScore  string  `json:"cvss_base_score"`
@@ -113,14 +113,14 @@ func (c *Client) GetPluginOutput(ctx context.Context, scanID, hostID, pluginID i
 	}
 
 	result.Info = PluginInfo{
-		PluginID:       d.PluginID,
+		PluginID:       toInt(d.PluginID),
 		Name:           d.Name,
 		Family:         d.Family,
-		Severity:       d.Severity,
+		Severity:       toInt(d.Severity),
 		Synopsis:       a.Synopsis,
 		Description:    a.Description,
 		Solution:       a.Solution,
-		SeeAlso:        a.SeeAlso,
+		SeeAlso:        toSeeAlso(a.SeeAlso),
 		RiskFactor:     a.RiskFactor,
 		CVE:            cves,
 		BID:            bids,
