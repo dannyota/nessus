@@ -4,19 +4,11 @@ import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
+	"io"
 	"strconv"
 )
 
-// XML structures for Nessus export format.
-
-type xmlNessusClientData struct {
-	Report xmlReport `xml:"Report"`
-}
-
-type xmlReport struct {
-	Name  string          `xml:"name,attr"`
-	Hosts []xmlReportHost `xml:"ReportHost"`
-}
+// XML structures for Nessus export format (used by streaming parser).
 
 type xmlReportHost struct {
 	Name           string            `xml:"name,attr"`
@@ -56,29 +48,56 @@ type xmlReportItem struct {
 }
 
 // ParseNessusXML parses a Nessus XML export into structured types.
-// The result contains the same data as calling GetHostDetails + GetPluginOutput
-// for every host, but from a single bulk download.
+// Uses a streaming parser — only one ReportHost is in memory at a time.
 //
 // Use minSeverity to filter findings: 0=all, 1=low+, 2=medium+, 3=high+, 4=critical only.
 func ParseNessusXML(data []byte, minSeverity ...int) (*ExportResult, error) {
+	return ParseNessusXMLFromReader(bytes.NewReader(data), minSeverity...)
+}
+
+// ParseNessusXMLFromReader parses a Nessus XML export from an io.Reader.
+// Uses a streaming parser — only one ReportHost is in memory at a time,
+// making it suitable for large exports.
+//
+// Use minSeverity to filter findings: 0=all, 1=low+, 2=medium+, 3=high+, 4=critical only.
+func ParseNessusXMLFromReader(r io.Reader, minSeverity ...int) (*ExportResult, error) {
 	minSev := 0
 	if len(minSeverity) > 0 {
 		minSev = minSeverity[0]
 	}
 
-	var doc xmlNessusClientData
-	if err := xml.NewDecoder(bytes.NewReader(data)).Decode(&doc); err != nil {
-		return nil, fmt.Errorf("nessus: parse XML: %w", err)
-	}
+	decoder := xml.NewDecoder(r)
+	result := &ExportResult{}
 
-	result := &ExportResult{
-		Name:  doc.Report.Name,
-		Hosts: make([]ExportHost, 0, len(doc.Report.Hosts)),
-	}
+	for {
+		token, err := decoder.Token()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("nessus: parse XML: %w", err)
+		}
 
-	for _, h := range doc.Report.Hosts {
-		host := convertXMLHost(h, minSev)
-		result.Hosts = append(result.Hosts, host)
+		elem, ok := token.(xml.StartElement)
+		if !ok {
+			continue
+		}
+
+		switch elem.Name.Local {
+		case "Report":
+			for _, attr := range elem.Attr {
+				if attr.Name.Local == "name" {
+					result.Name = attr.Value
+				}
+			}
+
+		case "ReportHost":
+			var hostXML xmlReportHost
+			if err := decoder.DecodeElement(&hostXML, &elem); err != nil {
+				return nil, fmt.Errorf("nessus: parse ReportHost: %w", err)
+			}
+			result.Hosts = append(result.Hosts, convertXMLHost(hostXML, minSev))
+		}
 	}
 
 	return result, nil

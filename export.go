@@ -11,9 +11,16 @@ type ExportOption interface {
 	apply(*exportConfig)
 }
 
+// ExportProgress reports the current state of an ExportAndWait operation.
+type ExportProgress struct {
+	Phase string // "exporting", "polling", "downloading", "parsing"
+	Token string // export token/identifier
+}
+
 type exportConfig struct {
 	historyID   int
 	minSeverity int
+	onProgress  func(ExportProgress)
 }
 
 type withHistoryID struct{ id int }
@@ -30,6 +37,14 @@ func (o withMinSeverity) apply(c *exportConfig) { c.minSeverity = o.level }
 // WithMinSeverity filters findings during XML parsing.
 // 0=all (default), 1=low+, 2=medium+, 3=high+, 4=critical only.
 func WithMinSeverity(level int) ExportOption { return withMinSeverity{level} }
+
+type withOnProgress struct{ fn func(ExportProgress) }
+
+func (o withOnProgress) apply(c *exportConfig) { c.onProgress = o.fn }
+
+// WithOnProgress sets a callback that is invoked during ExportAndWait
+// to report progress through export phases. Useful for Temporal heartbeats.
+func WithOnProgress(fn func(ExportProgress)) ExportOption { return withOnProgress{fn} }
 
 type apiExportRequest struct {
 	Format string `json:"format"`
@@ -65,8 +80,10 @@ func (c *Client) ExportScan(ctx context.Context, scanID int, opts ...ExportOptio
 	if resp.Token != "" {
 		return resp.Token, nil
 	}
-	// Some Nessus versions return file ID instead of token.
-	return fmt.Sprintf("%d", resp.File), nil
+	if resp.File > 0 {
+		return fmt.Sprintf("%d", resp.File), nil
+	}
+	return "", fmt.Errorf("nessus: export response missing token and file ID")
 }
 
 // ExportStatus checks if an export is ready for download.
@@ -115,11 +132,19 @@ func (c *Client) ExportAndWait(ctx context.Context, scanID int, opts ...ExportOp
 		o.apply(&cfg)
 	}
 
+	notify := func(phase, token string) {
+		if cfg.onProgress != nil {
+			cfg.onProgress(ExportProgress{Phase: phase, Token: token})
+		}
+	}
+
 	// Pass only export-relevant options to ExportScan (historyID).
 	var exportOpts []ExportOption
 	if cfg.historyID > 0 {
 		exportOpts = append(exportOpts, WithHistoryID(cfg.historyID))
 	}
+
+	notify("exporting", "")
 
 	token, err := c.ExportScan(ctx, scanID, exportOpts...)
 	if err != nil {
@@ -127,7 +152,11 @@ func (c *Client) ExportAndWait(ctx context.Context, scanID int, opts ...ExportOp
 	}
 
 	// Poll until ready.
+	notify("polling", token)
 	for {
+		if err := ctx.Err(); err != nil {
+			return nil, fmt.Errorf("nessus: export wait: %w", err)
+		}
 		status, err := c.ExportStatus(ctx, token)
 		if err != nil {
 			return nil, fmt.Errorf("nessus: export status: %w", err)
@@ -140,13 +169,16 @@ func (c *Client) ExportAndWait(ctx context.Context, scanID int, opts ...ExportOp
 		case <-ctx.Done():
 			return nil, fmt.Errorf("nessus: export wait: %w", ctx.Err())
 		case <-time.After(2 * time.Second):
+			notify("polling", token)
 		}
 	}
 
+	notify("downloading", token)
 	data, err := c.DownloadExport(ctx, token)
 	if err != nil {
 		return nil, fmt.Errorf("nessus: download export: %w", err)
 	}
 
+	notify("parsing", token)
 	return ParseNessusXML(data, cfg.minSeverity)
 }

@@ -1,6 +1,9 @@
 package nessus
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 const testXML = `<?xml version="1.0"?>
 <NessusClientData_v2>
@@ -194,8 +197,40 @@ func TestParseNessusXML_Empty(t *testing.T) {
 }
 
 func TestParseNessusXML_Invalid(t *testing.T) {
-	_, err := ParseNessusXML([]byte("not xml"))
+	_, err := ParseNessusXML([]byte("<broken><xml"))
 	if err == nil {
 		t.Fatal("expected error")
+	}
+}
+
+func TestParseNessusXMLFromReader(t *testing.T) {
+	result, err := ParseNessusXMLFromReader(strings.NewReader(testXML))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Name != "Test Scan" {
+		t.Errorf("Name = %q", result.Name)
+	}
+	if len(result.Hosts) != 2 {
+		t.Fatalf("len(Hosts) = %d, want 2", len(result.Hosts))
+	}
+	if result.Hosts[0].IP != "10.0.0.1" {
+		t.Errorf("IP = %q", result.Hosts[0].IP)
+	}
+	if len(result.Hosts[0].Findings) != 2 {
+		t.Errorf("len(Findings) = %d, want 2", len(result.Hosts[0].Findings))
+	}
+}
+
+func TestParseNessusXMLFromReader_MinSeverity(t *testing.T) {
+	result, err := ParseNessusXMLFromReader(strings.NewReader(testXML), SeverityHigh)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Hosts[0].Findings) != 1 {
+		t.Fatalf("host 1: len(Findings) = %d, want 1", len(result.Hosts[0].Findings))
+	}
+	if len(result.Hosts[1].Findings) != 0 {
+		t.Fatalf("host 2: len(Findings) = %d, want 0", len(result.Hosts[1].Findings))
 	}
 }
