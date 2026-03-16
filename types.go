@@ -69,6 +69,59 @@ type PortInfo struct {
 	Output string
 }
 
+// ScanHistory represents a single historical run of a scan.
+type ScanHistory struct {
+	HistoryID    int
+	Status       string
+	CreationDate int64
+}
+
+// ExportResult is the parsed output from a Nessus XML export.
+// Equivalent to calling GetHostDetails + GetPluginOutput for every host,
+// but retrieved in a single bulk download.
+type ExportResult struct {
+	Name  string
+	Hosts []ExportHost
+}
+
+// ExportHost contains all findings for one host from an export.
+type ExportHost struct {
+	IP       string
+	FQDN     string
+	Hostname string
+	OS       string
+	MAC      string
+	Findings []Finding
+}
+
+// Finding is a single vulnerability with full detail from an export.
+// Equivalent to HostVulnerability + PluginOutput combined.
+type Finding struct {
+	PluginID     int
+	PluginName   string
+	PluginFamily string
+	Severity     int    // 0=info, 1=low, 2=medium, 3=high, 4=critical
+	Port         string // "443", "0" for local checks
+	Protocol     string // "tcp", "udp"
+	Service      string // "www", "ssh", etc.
+
+	Synopsis    string
+	Description string
+	Solution    string
+	SeeAlso     string
+	RiskFactor  string
+	Output      string // evidence text ("Remote package installed: X, Should be: Y")
+
+	CVSSBaseScore  float64
+	CVSSVector     string
+	CVSS3BaseScore float64
+	CVSS3Vector    string
+
+	CVE  []string
+	BID  []string
+	XREF []string
+}
+
 // PluginInfo contains plugin metadata from the finding detail.
 type PluginInfo struct {
 	PluginID     int

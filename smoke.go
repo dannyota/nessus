@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"text/tabwriter"
+	"time"
 
 	"danny.vn/nessus"
 )
@@ -98,84 +99,102 @@ func main() {
 	w.Flush()
 	fmt.Println()
 
-	// Get details + host vulns for the first completed scan.
+	// Find the smallest completed scan for export testing.
+	var exportScanID int
 	for _, s := range scans {
-		if s.Status != "completed" {
-			continue
+		if s.Status == "completed" {
+			exportScanID = s.ID
 		}
+	}
+	if exportScanID == 0 {
+		fmt.Println("No completed scans found.")
+		return
+	}
 
-		fmt.Printf("Scan %d (%s):\n", s.ID, s.Name)
-		detail, err := client.GetScan(ctx, s.ID)
-		if err != nil {
-			fmt.Printf("  GetScan: %v\n", err)
-			continue
+	// --- Scan History ---
+	fmt.Printf("=== Scan History (scan %d) ===\n", exportScanID)
+	history, err := client.GetScanHistory(ctx, exportScanID)
+	if err != nil {
+		fmt.Printf("  GetScanHistory: %v\n", err)
+	} else {
+		fmt.Fprintf(w, "HISTORY_ID\tSTATUS\tDATE\n")
+		for _, h := range firstN(history, 5) {
+			fmt.Fprintf(w, "%d\t%s\t%s\n", h.HistoryID, h.Status, time.Unix(h.CreationDate, 0).Format("2006-01-02 15:04"))
 		}
-		fmt.Printf("  Policy: %s, Scanner: %s, Targets: %s\n", detail.Info.Policy, detail.Info.Scanner, detail.Info.Targets)
-		fmt.Printf("  Hosts: %d\n\n", len(detail.Hosts))
+		if len(history) > 5 {
+			fmt.Fprintf(w, "... and %d more\n", len(history)-5)
+		}
+		w.Flush()
+		fmt.Println()
+		writeSample("scan_history", history)
+	}
 
-		fmt.Fprintf(w, "HOST\tIP\tOS\tCRIT\tHIGH\tMED\tLOW\tINFO\n")
-		for _, h := range detail.Hosts {
-			fmt.Fprintf(w, "%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\n",
-				h.Hostname, h.IP, h.OS, h.Critical, h.High, h.Medium, h.Low, h.Info)
+	// --- Export & Parse ---
+	fmt.Printf("=== Export & Parse (scan %d) ===\n", exportScanID)
+	fmt.Println("Requesting export...")
+
+	start := time.Now()
+	result, err := client.ExportAndWait(ctx, exportScanID)
+	if err != nil {
+		fmt.Printf("  ExportAndWait: %v\n", err)
+	} else {
+		elapsed := time.Since(start)
+		fmt.Printf("  Downloaded and parsed in %s\n", elapsed.Round(time.Millisecond))
+		fmt.Printf("  Report: %s\n", result.Name)
+		fmt.Printf("  Hosts: %d\n\n", len(result.Hosts))
+
+		// Show host summary.
+		fmt.Fprintf(w, "HOST\tIP\tOS\tFINDINGS\tCRIT\tHIGH\n")
+		for _, h := range firstN(result.Hosts, 20) {
+			crit, high := 0, 0
+			for _, f := range h.Findings {
+				if f.Severity == 4 {
+					crit++
+				}
+				if f.Severity == 3 {
+					high++
+				}
+			}
+			fmt.Fprintf(w, "%s\t%s\t%s\t%d\t%d\t%d\n",
+				h.Hostname, h.IP, truncate(h.OS, 30), len(h.Findings), crit, high)
 		}
 		w.Flush()
 		fmt.Println()
 
-		// Get vulns for the first host.
-		if len(detail.Hosts) > 0 {
-			host := detail.Hosts[0]
-			fmt.Printf("Vulnerabilities for %s (%s):\n", host.Hostname, host.IP)
-
-			vulns, err := client.GetHostDetails(ctx, s.ID, host.HostID)
-			if err != nil {
-				fmt.Printf("  GetHostDetails: %v\n", err)
-			} else {
-				fmt.Fprintf(w, "PLUGIN\tNAME\tFAMILY\tSEVERITY\tCOUNT\n")
-				for _, v := range firstN(vulns, 10) {
-					fmt.Fprintf(w, "%d\t%s\t%s\t%d\t%d\n",
-						v.PluginID, v.PluginName, v.PluginFamily, v.Severity, v.Count)
-				}
-				w.Flush()
-				fmt.Println()
-
-				// Get plugin output for the first high/critical vuln.
-				for _, v := range vulns {
-					if v.Severity >= 3 {
-						fmt.Printf("Plugin output for %s (plugin %d):\n", v.PluginName, v.PluginID)
-						output, err := client.GetPluginOutput(ctx, s.ID, host.HostID, v.PluginID)
-						if err != nil {
-							fmt.Printf("  GetPluginOutput: %v\n", err)
-						} else {
-							fmt.Printf("  Synopsis: %s\n", output.Info.Synopsis)
-							fmt.Printf("  Risk: %s\n", output.Info.RiskFactor)
-							fmt.Printf("  CVSS: %.1f\n", output.Info.CVSSBaseScore)
-							fmt.Printf("  CVSS3: %.1f\n", output.Info.CVSS3BaseScore)
-							if len(output.Info.CVE) > 0 {
-								fmt.Printf("  CVEs: %v\n", output.Info.CVE)
-							}
-							fmt.Printf("  Solution: %s\n", output.Info.Solution)
-							writeSample("plugin_output", output)
-						}
-						break
+		// Show first critical finding with evidence.
+		for _, h := range result.Hosts {
+			for _, f := range h.Findings {
+				if f.Severity >= 3 && f.Output != "" {
+					fmt.Printf("=== Example Finding ===\n")
+					fmt.Printf("  Host: %s (%s)\n", h.Hostname, h.IP)
+					fmt.Printf("  Plugin: %d - %s\n", f.PluginID, f.PluginName)
+					fmt.Printf("  Severity: %d (%s)\n", f.Severity, f.RiskFactor)
+					fmt.Printf("  CVSS: %.1f  CVSS3: %.1f\n", f.CVSSBaseScore, f.CVSS3BaseScore)
+					if len(f.CVE) > 0 {
+						fmt.Printf("  CVEs: %v\n", f.CVE)
 					}
+					fmt.Printf("  Synopsis: %s\n", f.Synopsis)
+					fmt.Printf("  Solution: %s\n", f.Solution)
+					fmt.Printf("  Evidence:\n    %s\n", truncate(f.Output, 200))
+					fmt.Println()
+					writeSample("export_finding", f)
+					goto done
 				}
 			}
-
-			writeSample("host_vulnerabilities", firstN(vulns, 20))
 		}
+	done:
 
-		// Write samples.
-		writeSample("scan_detail", detail)
-		break // Only process first completed scan.
+		// Stats.
+		totalFindings := 0
+		for _, h := range result.Hosts {
+			totalFindings += len(h.Findings)
+		}
+		fmt.Printf("Total: %d hosts, %d findings\n\n", len(result.Hosts), totalFindings)
+
+		writeSample("export_result_hosts", firstN(result.Hosts, 3))
 	}
 
-	// Summary.
-	fmt.Println()
-	fmt.Fprintf(w, "RESOURCE\tCOUNT\n")
-	fmt.Fprintf(w, "Scans\t%d\n", len(scans))
-	w.Flush()
-
-	fmt.Println("\nWriting samples/...")
+	fmt.Println("Writing samples/...")
 	writeSample("scans", scans)
 }
 
@@ -185,4 +204,11 @@ func firstN[T any](s []T, n int) []T {
 		return s
 	}
 	return s[:n]
+}
+
+func truncate(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[:n] + "..."
 }
