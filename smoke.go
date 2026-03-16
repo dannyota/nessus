@@ -130,6 +130,29 @@ func main() {
 		writeSample("scan_history", history)
 	}
 
+	// --- Host Detail + OS Detection ---
+	detail, err := client.GetScan(ctx, exportScanID)
+	if err != nil {
+		fmt.Printf("  GetScan: %v\n", err)
+	} else if len(detail.Hosts) > 0 {
+		firstHost := detail.Hosts[0]
+		fmt.Printf("=== Host Detail (host %d) ===\n", firstHost.HostID)
+		hd, err := client.GetHostDetails(ctx, exportScanID, firstHost.HostID)
+		if err != nil {
+			fmt.Printf("  GetHostDetails: %v\n", err)
+		} else {
+			fmt.Printf("  IP:          %s\n", hd.IP)
+			fmt.Printf("  FQDN:        %s\n", hd.FQDN)
+			fmt.Printf("  OS:          %s\n", hd.OS)
+			fmt.Printf("  OS Family:   %s\n", nessus.OSFamily(hd.OS))
+			fmt.Printf("  MAC:         %s\n", hd.MAC)
+			fmt.Printf("  NetBIOS:     %s\n", hd.NetBIOSName)
+			fmt.Printf("  Vulns:       %d\n", len(hd.Vulnerabilities))
+			fmt.Println()
+			writeSample("host_detail", hd)
+		}
+	}
+
 	// --- Export & Parse ---
 	fmt.Printf("=== Export & Parse (scan %d) ===\n", exportScanID)
 	fmt.Println("Requesting export...")
@@ -145,7 +168,7 @@ func main() {
 		fmt.Printf("  Hosts: %d\n\n", len(result.Hosts))
 
 		// Show host summary.
-		fmt.Fprintf(w, "HOST\tIP\tOS\tFINDINGS\tCRIT\tHIGH\n")
+		fmt.Fprintf(w, "HOST\tIP\tOS\tFAMILY\tFINDINGS\tCRIT\tHIGH\n")
 		for _, h := range firstN(result.Hosts, 20) {
 			crit, high := 0, 0
 			for _, f := range h.Findings {
@@ -156,8 +179,9 @@ func main() {
 					high++
 				}
 			}
-			fmt.Fprintf(w, "%s\t%s\t%s\t%d\t%d\t%d\n",
-				h.Hostname, h.IP, truncate(h.OS, 30), len(h.Findings), crit, high)
+			osInfo := nessus.ExtractOS(h)
+			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%d\t%d\t%d\n",
+				h.Hostname, h.IP, truncate(osInfo.Name, 30), osInfo.Family, len(h.Findings), crit, high)
 		}
 		w.Flush()
 		fmt.Println()

@@ -47,6 +47,17 @@ type Host struct {
 	Progress     string
 }
 
+// HostDetail contains host info and the vulnerability list from the detail endpoint.
+type HostDetail struct {
+	IP              string
+	FQDN            string
+	Hostname        string
+	OS              string
+	MAC             string
+	NetBIOSName     string
+	Vulnerabilities []HostVulnerability
+}
+
 // HostVulnerability represents a vulnerability found on a host.
 type HostVulnerability struct {
 	PluginID     int

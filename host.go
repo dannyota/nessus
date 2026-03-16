@@ -11,9 +11,12 @@ type apiHostDetail struct {
 }
 
 type apiHostInfo struct {
-	HostIP   string `json:"host-ip"`
-	HostFQDN string `json:"host-fqdn"`
-	OS       string `json:"operating-system"`
+	HostIP      string `json:"host-ip"`
+	HostFQDN    string `json:"host-fqdn"`
+	Hostname    string `json:"hostname"`
+	OS          string `json:"operating-system"`
+	MACAddress  string `json:"mac-address"`
+	NetBIOSName string `json:"netbios-name"`
 }
 
 type apiHostVulnerability struct {
@@ -24,16 +27,25 @@ type apiHostVulnerability struct {
 	Count        int    `json:"count"`
 }
 
-// GetHostDetails retrieves the vulnerability list for a specific host in a scan.
-func (c *Client) GetHostDetails(ctx context.Context, scanID, hostID int) ([]HostVulnerability, error) {
+// GetHostDetails retrieves host info and the vulnerability list for a specific host in a scan.
+func (c *Client) GetHostDetails(ctx context.Context, scanID, hostID int) (*HostDetail, error) {
 	var resp apiHostDetail
 	if err := c.getJSON(ctx, fmt.Sprintf("/scans/%d/hosts/%d", scanID, hostID), &resp); err != nil {
 		return nil, err
 	}
 
-	vulns := make([]HostVulnerability, len(resp.Vulnerabilities))
+	detail := &HostDetail{
+		IP:          resp.Info.HostIP,
+		FQDN:        resp.Info.HostFQDN,
+		Hostname:    resp.Info.Hostname,
+		OS:          resp.Info.OS,
+		MAC:         resp.Info.MACAddress,
+		NetBIOSName: resp.Info.NetBIOSName,
+	}
+
+	detail.Vulnerabilities = make([]HostVulnerability, len(resp.Vulnerabilities))
 	for i, v := range resp.Vulnerabilities {
-		vulns[i] = HostVulnerability{
+		detail.Vulnerabilities[i] = HostVulnerability{
 			PluginID:     v.PluginID,
 			PluginName:   v.PluginName,
 			PluginFamily: v.PluginFamily,
@@ -42,5 +54,5 @@ func (c *Client) GetHostDetails(ctx context.Context, scanID, hostID int) ([]Host
 		}
 	}
 
-	return vulns, nil
+	return detail, nil
 }

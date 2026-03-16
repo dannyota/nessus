@@ -11,7 +11,10 @@ func TestGetHostDetails(t *testing.T) {
 			"info": {
 				"host-ip": "192.168.1.10",
 				"host-fqdn": "web-01.example.com",
-				"operating-system": "Linux 5.15"
+				"hostname": "web-01",
+				"operating-system": "Linux 5.15",
+				"mac-address": "00:1A:2B:3C:4D:5E",
+				"netbios-name": "WEB01"
 			},
 			"vulnerabilities": [
 				{
@@ -32,15 +35,37 @@ func TestGetHostDetails(t *testing.T) {
 		}`,
 	})
 
-	vulns, err := client.GetHostDetails(context.Background(), 42, 1)
+	detail, err := client.GetHostDetails(context.Background(), 42, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(vulns) != 2 {
-		t.Fatalf("len = %d, want 2", len(vulns))
+
+	// Host info.
+	if detail.IP != "192.168.1.10" {
+		t.Errorf("IP = %q", detail.IP)
+	}
+	if detail.FQDN != "web-01.example.com" {
+		t.Errorf("FQDN = %q", detail.FQDN)
+	}
+	if detail.Hostname != "web-01" {
+		t.Errorf("Hostname = %q", detail.Hostname)
+	}
+	if detail.OS != "Linux 5.15" {
+		t.Errorf("OS = %q", detail.OS)
+	}
+	if detail.MAC != "00:1A:2B:3C:4D:5E" {
+		t.Errorf("MAC = %q", detail.MAC)
+	}
+	if detail.NetBIOSName != "WEB01" {
+		t.Errorf("NetBIOSName = %q", detail.NetBIOSName)
 	}
 
-	v := vulns[0]
+	// Vulnerabilities.
+	if len(detail.Vulnerabilities) != 2 {
+		t.Fatalf("len = %d, want 2", len(detail.Vulnerabilities))
+	}
+
+	v := detail.Vulnerabilities[0]
 	if v.PluginID != 12345 {
 		t.Errorf("PluginID = %d", v.PluginID)
 	}
@@ -57,7 +82,7 @@ func TestGetHostDetails(t *testing.T) {
 		t.Errorf("Count = %d", v.Count)
 	}
 
-	v2 := vulns[1]
+	v2 := detail.Vulnerabilities[1]
 	if v2.Severity != SeverityMedium {
 		t.Errorf("Severity = %d, want SeverityMedium", v2.Severity)
 	}
@@ -71,11 +96,14 @@ func TestGetHostDetails_Empty(t *testing.T) {
 		}`,
 	})
 
-	vulns, err := client.GetHostDetails(context.Background(), 42, 1)
+	detail, err := client.GetHostDetails(context.Background(), 42, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(vulns) != 0 {
-		t.Fatalf("len = %d, want 0", len(vulns))
+	if detail.IP != "10.0.0.1" {
+		t.Errorf("IP = %q", detail.IP)
+	}
+	if len(detail.Vulnerabilities) != 0 {
+		t.Fatalf("len = %d, want 0", len(detail.Vulnerabilities))
 	}
 }
