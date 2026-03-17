@@ -47,6 +47,28 @@ func TestParseVersions(t *testing.T) {
 		}
 	})
 
+	t.Run("reported version with unix path", func(t *testing.T) {
+		output := `
+  Path             : /usr/local/openresty/openssl111/lib/libssl.so.1.1
+  Reported version : 1.1.1w
+  Fixed version    : 1.1.1za
+`
+		results := ParseVersions(output)
+		if len(results) != 1 {
+			t.Fatalf("len = %d, want 1", len(results))
+		}
+		v := results[0]
+		if v.Package != "/usr/local/openresty/openssl111/lib/libssl.so.1.1" {
+			t.Errorf("Package = %q", v.Package)
+		}
+		if v.Installed != "1.1.1w" {
+			t.Errorf("Installed = %q", v.Installed)
+		}
+		if v.Fixed != "1.1.1za" {
+			t.Errorf("Fixed = %q", v.Fixed)
+		}
+	})
+
 	t.Run("sql server style", func(t *testing.T) {
 		output := `
   KB : 5040936
@@ -91,6 +113,32 @@ Should be                : gnupg2-2.3.3-5.el9_7
 		}
 		if v.Fixed != "gnupg2-2.3.3-5.el9_7" {
 			t.Errorf("Fixed = %q", v.Fixed)
+		}
+	})
+
+	t.Run("debian package format", func(t *testing.T) {
+		output := `
+Remote package installed : libexpat1_2.2.6-2+deb10u4_amd64
+Should be                : libexpat1_2.2.6-2+deb10u7_amd64
+
+Remote package installed : openssl_3.0.13-0ubuntu3.4_amd64
+Should be                : openssl_3.0.13-0ubuntu3.5_amd64
+`
+		results := ParseVersions(output)
+		if len(results) != 2 {
+			t.Fatalf("len = %d, want 2", len(results))
+		}
+		if results[0].Installed != "libexpat1_2.2.6-2+deb10u4_amd64" {
+			t.Errorf("[0].Installed = %q", results[0].Installed)
+		}
+		if results[0].Fixed != "libexpat1_2.2.6-2+deb10u7_amd64" {
+			t.Errorf("[0].Fixed = %q", results[0].Fixed)
+		}
+		if results[1].Installed != "openssl_3.0.13-0ubuntu3.4_amd64" {
+			t.Errorf("[1].Installed = %q", results[1].Installed)
+		}
+		if results[1].Fixed != "openssl_3.0.13-0ubuntu3.5_amd64" {
+			t.Errorf("[1].Fixed = %q", results[1].Fixed)
 		}
 	})
 

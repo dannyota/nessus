@@ -15,13 +15,14 @@ type VersionInfo struct {
 var (
 	pathPattern        = regexp.MustCompile(`(?i)^\s*Path\s*:\s*(.+)`)
 	patchedPathPattern = regexp.MustCompile(`(?i)^-\s*(.+)\s+has not been patched`)
-	installedPattern   = regexp.MustCompile(`(?i)^\s*(?:Installed version|Remote version)\s*:\s*(.+)`)
+	installedPattern   = regexp.MustCompile(`(?i)^\s*(?:Installed version|Reported version|Remote version)\s*:\s*(.+)`)
 	packagePattern     = regexp.MustCompile(`(?i)Remote package installed\s*:\s*(.+)`)
 	fixedPattern       = regexp.MustCompile(`(?i)^\s*(?:Fixed version|Should be)\s*:\s*(.+)`)
 )
 
 // ParseVersions extracts installed/fixed version pairs from plugin output text.
 // It handles Windows-style (Path + Installed version + Fixed version),
+// library-style (Path + Reported version + Fixed version),
 // SQL Server-style (Remote version + Should be), and Linux package-style
 // (Remote package installed + Should be) output formats.
 // Returns nil if no version information is found.
