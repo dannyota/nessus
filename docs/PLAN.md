@@ -55,16 +55,22 @@ Development roadmap for nessus.
 
 ## 🔮 Phase 6: Future
 
-Add as needed when hotpot integration requires them:
+Add as needed:
 
 | Task | Description |
 |------|-------------|
 | `ListFolders()` | Scan folder organization |
 | `ServerStatus()` | Scanner health check |
 | `ServerProperties()` | Scanner version, license info |
-| Agent ID extraction | Helper to extract Nessus Agent UUID from plugin 110230 output |
-| Streaming XML parser | Memory-efficient parsing for very large exports |
-| Export progress callback | Notify caller during poll loop |
+
+## 🤖 Phase 7: Agent & Scanner APIs — ✅ Done
+
+| Task | Description | Status |
+|------|-------------|:------:|
+| Rename `Host` types | `Host` → `ScanHost`, `HostDetail` → `ScanHostDetail`, `HostVulnerability` → `ScanHostVulnerability` | ✅ |
+| `ListAgents(ctx, fn)` | Iterate agents with callback | ✅ |
+| `ListAgentGroups(ctx)` | List all agent groups | ✅ |
+| `ListScanners(ctx)` | List all scanners | ✅ |
 
 ## ❌ Non-Goals
 
@@ -72,4 +78,3 @@ Add as needed when hotpot integration requires them:
 |-------|--------|
 | Write operations (create/launch/stop scans) | Read-only SDK |
 | Tenable.io (cloud) API | Different API, different auth (Tenable API keys) |
-| Nessus Agent API | Separate product |

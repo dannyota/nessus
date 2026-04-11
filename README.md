@@ -53,9 +53,13 @@ Read-only. See [FEATURES.md](docs/FEATURES.md) for details.
 
 | Category | Resources | Count |
 |----------|-----------|:-----:|
-| Scans | List scans, scan details | 2 |
+| Scans | List scans, scan details, history | 3 |
 | Hosts | Host details per scan | 1 |
 | Findings | Plugin output per host | 1 |
+| Export | Export, poll, download, parse | 4 |
+| Agents | List agents | 1 |
+| Agent Groups | List agent groups | 1 |
+| Scanners | List scanners | 1 |
 
 ## ✅ Testing
 

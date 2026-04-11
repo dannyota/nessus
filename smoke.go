@@ -4,9 +4,12 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"os"
 	"text/tabwriter"
 	"time"
@@ -130,13 +133,13 @@ func main() {
 		writeSample("scan_history", history)
 	}
 
-	// --- Host Detail + OS Detection ---
+	// --- Scan Host Detail + OS Detection ---
 	detail, err := client.GetScan(ctx, exportScanID)
 	if err != nil {
 		fmt.Printf("  GetScan: %v\n", err)
 	} else if len(detail.Hosts) > 0 {
 		firstHost := detail.Hosts[0]
-		fmt.Printf("=== Host Detail (host %d) ===\n", firstHost.HostID)
+		fmt.Printf("=== Scan Host Detail (host %d) ===\n", firstHost.HostID)
 		hd, err := client.GetHostDetails(ctx, exportScanID, firstHost.HostID)
 		if err != nil {
 			fmt.Printf("  GetHostDetails: %v\n", err)
@@ -221,6 +224,35 @@ func main() {
 
 	fmt.Println("Writing samples/...")
 	writeSample("scans", scans)
+
+	// --- Raw API capture for new endpoints ---
+	fmt.Println("\n=== Raw API Capture ===")
+	rawEndpoints := map[string]string{
+		"agents":       "/agents",
+		"agent_groups": "/agent-groups",
+		"scanners":     "/scanners",
+	}
+	for name, path := range rawEndpoints {
+		fmt.Printf("  GET %s ... ", path)
+		body, err := rawGet(cfg, path)
+		if err != nil {
+			fmt.Printf("ERROR: %v\n", err)
+			continue
+		}
+		// Pretty-print the JSON.
+		var pretty json.RawMessage
+		if json.Unmarshal(body, &pretty) == nil {
+			formatted, _ := json.MarshalIndent(pretty, "", "  ")
+			body = formatted
+		}
+		os.MkdirAll("samples", 0o755)
+		p := fmt.Sprintf("samples/%s.json", name)
+		if err := os.WriteFile(p, body, 0o644); err != nil {
+			fmt.Printf("write error: %v\n", err)
+			continue
+		}
+		fmt.Printf("OK → %s (%d bytes)\n", p, len(body))
+	}
 }
 
 // firstN returns the first n items from a slice (or all if fewer).
@@ -229,6 +261,35 @@ func firstN[T any](s []T, n int) []T {
 		return s
 	}
 	return s[:n]
+}
+
+// rawGet makes an authenticated GET request and returns the raw response body.
+func rawGet(cfg config, path string) ([]byte, error) {
+	tr := http.DefaultTransport.(*http.Transport).Clone()
+	tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: cfg.InsecureTLS}
+	hc := &http.Client{Transport: tr, Timeout: 30 * time.Second}
+
+	req, err := http.NewRequest("GET", cfg.Address+path, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("X-ApiKeys", fmt.Sprintf("accessKey=%s;secretKey=%s", cfg.AccessKey, cfg.SecretKey))
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := hc.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, string(body[:min(len(body), 200)]))
+	}
+	return body, nil
 }
 
 func truncate(s string, n int) string {

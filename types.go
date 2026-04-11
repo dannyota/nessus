@@ -18,7 +18,7 @@ type Scan struct {
 // ScanDetail represents full scan details including the host list.
 type ScanDetail struct {
 	Info  ScanInfo
-	Hosts []Host
+	Hosts []ScanHost
 }
 
 // ScanInfo contains scan metadata from the detail response.
@@ -33,8 +33,8 @@ type ScanInfo struct {
 	HostCount  int
 }
 
-// Host represents a scanned host within a scan result.
-type Host struct {
+// ScanHost represents a scanned host within a scan result.
+type ScanHost struct {
 	HostID       int
 	Hostname     string
 	IP           string
@@ -47,19 +47,19 @@ type Host struct {
 	Progress     string
 }
 
-// HostDetail contains host info and the vulnerability list from the detail endpoint.
-type HostDetail struct {
+// ScanHostDetail contains host info and the vulnerability list from the detail endpoint.
+type ScanHostDetail struct {
 	IP              string
 	FQDN            string
 	Hostname        string
 	OS              string
 	MAC             string
 	NetBIOSName     string
-	Vulnerabilities []HostVulnerability
+	Vulnerabilities []ScanHostVulnerability
 }
 
-// HostVulnerability represents a vulnerability found on a host.
-type HostVulnerability struct {
+// ScanHostVulnerability represents a vulnerability found on a host.
+type ScanHostVulnerability struct {
 	PluginID     int
 	PluginName   string
 	PluginFamily string
@@ -109,7 +109,7 @@ type ExportHost struct {
 }
 
 // Finding is a single vulnerability with full detail from an export.
-// Equivalent to HostVulnerability + PluginOutput combined.
+// Equivalent to ScanHostVulnerability + PluginOutput combined.
 type Finding struct {
 	PluginID     int
 	PluginName   string
@@ -134,6 +134,49 @@ type Finding struct {
 	CVE  []string
 	BID  []string
 	XREF []string
+}
+
+// Agent represents a Nessus agent connected to the manager.
+type Agent struct {
+	ID           int
+	UUID         string
+	Name         string
+	Status       string   // "online", "offline", "unlinked"
+	Platform     string   // "LINUX", "WINDOWS", "DARWIN"
+	Distro       string   // e.g. "es9-x86-64"
+	IP           string
+	MACAddresses []string // parsed from JSON-encoded string in API response
+	CoreVersion  string
+	CoreBuild    string
+	LinkedOn     int64 // Unix timestamp
+	LastConnect  int64 // Unix timestamp
+	LastScanned  int64 // Unix timestamp
+	Groups       []string
+	PluginFeedID string
+}
+
+// AgentGroup represents a Nessus agent group.
+type AgentGroup struct {
+	ID                   int
+	Name                 string
+	AgentsCount          int
+	OwnerID              int
+	OwnerName            string
+	CreationDate         int64
+	LastModificationDate int64
+}
+
+// Scanner represents a Nessus scanner instance.
+type Scanner struct {
+	ID            int
+	UUID          string
+	Name          string
+	Status        string // "on", "off"
+	Type          string // "local", "remote"
+	Platform      string
+	UIVersion     string
+	EngineVersion string
+	Linked        int
 }
 
 // PluginInfo contains plugin metadata from the finding detail.

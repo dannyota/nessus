@@ -37,13 +37,30 @@ Nessus self-hosted REST API coverage.
 |----------|----------|-------------|:------:|
 | Parse export | `ParseNessusXML(data)` | Parse `.nessus` XML into typed `ExportResult` | ✅ |
 
+## 🤖 Agents
+
+| Resource | SDK Method | API Endpoint | Status |
+|----------|-----------|--------------|:------:|
+| List agents | `ListAgents(ctx, fn)` | `GET /agents` | ✅ |
+
+## 📂 Agent Groups
+
+| Resource | SDK Method | API Endpoint | Status |
+|----------|-----------|--------------|:------:|
+| List agent groups | `ListAgentGroups(ctx)` | `GET /agent-groups` | ✅ |
+
+## 🔌 Scanners
+
+| Resource | SDK Method | API Endpoint | Status |
+|----------|-----------|--------------|:------:|
+| List scanners | `ListScanners(ctx)` | `GET /scanners` | ✅ |
+
 ## 🚫 Not in Scope
 
 | Resource | API Endpoint | Reason |
 |----------|-------------|--------|
 | Folders | `GET /folders` | Not needed for ingestion |
 | Policies | `GET /policies` | Not needed for ingestion |
-| Scanners | `GET /scanners` | Not needed for ingestion |
 | Server status | `GET /server/status` | Not needed for ingestion |
 | Server properties | `GET /server/properties` | Not needed for ingestion |
 | Create/launch scans | `POST /scans` | Read-only SDK |
@@ -57,6 +74,7 @@ Nessus self-hosted REST API coverage.
 | Findings | 1 | 0 | 1 |
 | Export | 4 | 0 | 4 |
 | Parser | 1 | 0 | 1 |
-| Folders | 0 | 1 | 1 |
-| System | 0 | 2 | 2 |
-| **Total** | **10** | **3** | **13** |
+| Agents | 1 | 0 | 1 |
+| Agent Groups | 1 | 0 | 1 |
+| Scanners | 1 | 0 | 1 |
+| **Total** | **13** | **0** | **13** |

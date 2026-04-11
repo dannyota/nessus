@@ -83,7 +83,7 @@ func ParseOS(output string) OSInfo {
 }
 
 // OSFamily classifies an OS string into a family name.
-// Works with any OS string (Host.OS, ExportHost.OS, or free text).
+// Works with any OS string (ScanHost.OS, ExportHost.OS, or free text).
 // Returns empty string if the OS cannot be classified.
 func OSFamily(os string) string {
 	lower := strings.ToLower(os)

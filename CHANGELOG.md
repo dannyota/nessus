@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.3.0
+
+### Breaking Changes
+
+- **Renamed scan host types** — `Host` → `ScanHost`, `HostDetail` → `ScanHostDetail`, `HostVulnerability` → `ScanHostVulnerability`. Clarifies that these represent hosts within a scan context, distinct from agent hosts
+
+### New Features
+
+- **Agent API** — `ListAgents(ctx, fn)` iterates all agents with callback
+- **Agent Group API** — `ListAgentGroups(ctx)` retrieves all agent groups
+- **Scanner API** — `ListScanners(ctx)` retrieves all scanners
+
+## v0.2.1
+
+- **Version parsing** — `ParseVersions(output)` extracts installed/fixed version pairs from plugin output. Handles Windows, Linux package, library, and SQL Server formats
+- Support `Reported version` format in version parser
+
+## v0.2.0
+
+- **OS detection** — `ExtractOS(host)`, `ParseOS(output)`, `OSFamily(os)` for OS classification from scan findings
+- **Host detail** — `GetHostDetails(scanID, hostID)` retrieves per-host vulnerability list via REST API
+
 ## v0.1.1
 
 ### New Features

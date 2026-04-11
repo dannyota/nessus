@@ -24,6 +24,9 @@ All endpoints are under the base URL (e.g. `https://nessus:8834`).
 | `/scans/{id}` | GET | Scan details with host list |
 | `/scans/{scan_id}/hosts/{host_id}` | GET | Host details with vulnerability list |
 | `/scans/{scan_id}/hosts/{host_id}/plugins/{plugin_id}` | GET | Plugin output (finding details) |
+| `/agents` | GET | List all agents |
+| `/agent-groups` | GET | List all agent groups |
+| `/scanners` | GET | List all scanners |
 
 ### 📦 Response Format
 
@@ -69,6 +72,9 @@ danny.vn/nessus/
 ├── scan.go               # ListScans, GetScan
 ├── host.go               # GetHostDetails
 ├── plugin.go             # GetPluginOutput
+├── agent_api.go          # ListAgents
+├── agent_group_api.go    # ListAgentGroups
+├── scanner_api.go        # ListScanners
 │
 ├── testhelper_test.go    # Shared httptest server
 ├── *_test.go             # Unit tests for all resources
@@ -79,11 +85,11 @@ danny.vn/nessus/
 
 | Decision | Rationale |
 |----------|-----------|
-| Flat package | 4 methods, single concern, no sub-packages needed |
+| Flat package | Single concern, no sub-packages needed |
 | Functional options | Clean constructor, extensible (rate limiting, custom transports) |
 | No Login/Logout | Nessus uses stateless API keys, not sessions |
 | Read-only | Inventory/audit use case — no scan creation or modification |
-| No pagination handling | Nessus self-hosted returns full lists (no cursor/offset API) |
+| No pagination handling | Nessus self-hosted returns full lists; agents use callback for large-data safety |
 | Separate DTOs | API structs stay unexported; public types have clean field names |
 
 ## ⚠️ TLS

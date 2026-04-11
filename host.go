@@ -28,13 +28,13 @@ type apiHostVulnerability struct {
 }
 
 // GetHostDetails retrieves host info and the vulnerability list for a specific host in a scan.
-func (c *Client) GetHostDetails(ctx context.Context, scanID, hostID int) (*HostDetail, error) {
+func (c *Client) GetHostDetails(ctx context.Context, scanID, hostID int) (*ScanHostDetail, error) {
 	var resp apiHostDetail
 	if err := c.getJSON(ctx, fmt.Sprintf("/scans/%d/hosts/%d", scanID, hostID), &resp); err != nil {
 		return nil, err
 	}
 
-	detail := &HostDetail{
+	detail := &ScanHostDetail{
 		IP:          resp.Info.HostIP,
 		FQDN:        resp.Info.HostFQDN,
 		Hostname:    resp.Info.Hostname,
@@ -43,9 +43,9 @@ func (c *Client) GetHostDetails(ctx context.Context, scanID, hostID int) (*HostD
 		NetBIOSName: resp.Info.NetBIOSName,
 	}
 
-	detail.Vulnerabilities = make([]HostVulnerability, len(resp.Vulnerabilities))
+	detail.Vulnerabilities = make([]ScanHostVulnerability, len(resp.Vulnerabilities))
 	for i, v := range resp.Vulnerabilities {
-		detail.Vulnerabilities[i] = HostVulnerability{
+		detail.Vulnerabilities[i] = ScanHostVulnerability{
 			PluginID:     v.PluginID,
 			PluginName:   v.PluginName,
 			PluginFamily: v.PluginFamily,
