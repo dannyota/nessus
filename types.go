@@ -179,6 +179,22 @@ type Scanner struct {
 	Linked        int
 }
 
+// ServerInfo contains metadata about the Nessus Manager instance.
+type ServerInfo struct {
+	NessusType       string // "Nessus Manager"
+	ServerUUID       string
+	Version          string // nessus_ui_version, e.g. "10.8.3"
+	Platform         string // "LINUX", "WINDOWS"
+	PluginSet        string // e.g. "202604081803"
+	LicenseType      string // "manager", "professional", "eval"
+	LicenseExpiry    int64  // Unix timestamp
+	LicensedHosts    int    // license.ips
+	LicensedAgents   int    // license.agents (capacity)
+	AgentsUsed       int    // license.agents_used
+	LicensedScanners int    // license.scanners (capacity)
+	ScannersUsed     int    // license.scanners_used
+}
+
 // PluginInfo contains plugin metadata from the finding detail.
 type PluginInfo struct {
 	PluginID     int

@@ -228,9 +228,10 @@ func main() {
 	// --- Raw API capture for new endpoints ---
 	fmt.Println("\n=== Raw API Capture ===")
 	rawEndpoints := map[string]string{
-		"agents":       "/agents",
-		"agent_groups": "/agent-groups",
-		"scanners":     "/scanners",
+		"agents":             "/agents",
+		"agent_groups":       "/agent-groups",
+		"scanners":           "/scanners",
+		"server_properties":  "/server/properties",
 	}
 	for name, path := range rawEndpoints {
 		fmt.Printf("  GET %s ... ", path)
