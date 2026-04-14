@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 )
 
 // get sends an authenticated GET request and returns the raw response body.
@@ -22,8 +23,12 @@ func (c *Client) get(ctx context.Context, path string) ([]byte, error) {
 		req.Header.Set("User-Agent", c.config.userAgent)
 	}
 
+	c.logger.DebugContext(ctx, "request", "method", "GET", "path", path)
+	start := time.Now()
+
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
+		c.logger.ErrorContext(ctx, "request failed", "method", "GET", "path", path, "error", err)
 		if isCertificateError(err) {
 			return nil, fmt.Errorf("nessus: TLS certificate error: %w", err)
 		}
@@ -36,24 +41,30 @@ func (c *Client) get(ctx context.Context, path string) ([]byte, error) {
 		return nil, fmt.Errorf("nessus: read response: %w", err)
 	}
 
+	duration := time.Since(start)
+
 	switch resp.StatusCode {
 	case http.StatusOK:
+		c.logger.DebugContext(ctx, "response", "method", "GET", "path", path, "status", resp.StatusCode, "duration", duration, "bytes", len(body))
 		return body, nil
 	case http.StatusUnauthorized:
+		c.logger.WarnContext(ctx, "api error", "method", "GET", "path", path, "status", resp.StatusCode)
 		return nil, ErrAuth
 	case http.StatusForbidden:
+		c.logger.WarnContext(ctx, "api error", "method", "GET", "path", path, "status", resp.StatusCode)
 		return nil, ErrPermission
 	case http.StatusNotFound:
+		c.logger.WarnContext(ctx, "api error", "method", "GET", "path", path, "status", resp.StatusCode)
 		return nil, ErrNotFound
 	default:
 		msg := string(body)
-		// Try to extract error message from JSON response.
 		var errResp struct {
 			Error string `json:"error"`
 		}
 		if json.Unmarshal(body, &errResp) == nil && errResp.Error != "" {
 			msg = errResp.Error
 		}
+		c.logger.WarnContext(ctx, "api error", "method", "GET", "path", path, "status", resp.StatusCode)
 		return nil, &APIError{StatusCode: resp.StatusCode, Message: msg}
 	}
 }
@@ -89,8 +100,12 @@ func (c *Client) post(ctx context.Context, path string, body any) ([]byte, error
 		req.Header.Set("User-Agent", c.config.userAgent)
 	}
 
+	c.logger.DebugContext(ctx, "request", "method", "POST", "path", path)
+	start := time.Now()
+
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
+		c.logger.ErrorContext(ctx, "request failed", "method", "POST", "path", path, "error", err)
 		if isCertificateError(err) {
 			return nil, fmt.Errorf("nessus: TLS certificate error: %w", err)
 		}
@@ -103,14 +118,20 @@ func (c *Client) post(ctx context.Context, path string, body any) ([]byte, error
 		return nil, fmt.Errorf("nessus: read response: %w", err)
 	}
 
+	duration := time.Since(start)
+
 	switch resp.StatusCode {
 	case http.StatusOK:
+		c.logger.DebugContext(ctx, "response", "method", "POST", "path", path, "status", resp.StatusCode, "duration", duration, "bytes", len(respBody))
 		return respBody, nil
 	case http.StatusUnauthorized:
+		c.logger.WarnContext(ctx, "api error", "method", "POST", "path", path, "status", resp.StatusCode)
 		return nil, ErrAuth
 	case http.StatusForbidden:
+		c.logger.WarnContext(ctx, "api error", "method", "POST", "path", path, "status", resp.StatusCode)
 		return nil, ErrPermission
 	case http.StatusNotFound:
+		c.logger.WarnContext(ctx, "api error", "method", "POST", "path", path, "status", resp.StatusCode)
 		return nil, ErrNotFound
 	default:
 		msg := string(respBody)
@@ -120,6 +141,7 @@ func (c *Client) post(ctx context.Context, path string, body any) ([]byte, error
 		if json.Unmarshal(respBody, &errResp) == nil && errResp.Error != "" {
 			msg = errResp.Error
 		}
+		c.logger.WarnContext(ctx, "api error", "method", "POST", "path", path, "status", resp.StatusCode)
 		return nil, &APIError{StatusCode: resp.StatusCode, Message: msg}
 	}
 }

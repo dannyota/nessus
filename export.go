@@ -3,6 +3,7 @@ package nessus
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 )
 
@@ -132,26 +133,31 @@ func (c *Client) ExportAndWait(ctx context.Context, scanID int, opts ...ExportOp
 		o.apply(&cfg)
 	}
 
+	log := c.logger.With(slog.Int("scan_id", scanID))
+
 	notify := func(phase, token string) {
 		if cfg.onProgress != nil {
 			cfg.onProgress(ExportProgress{Phase: phase, Token: token})
 		}
 	}
 
-	// Pass only export-relevant options to ExportScan (historyID).
 	var exportOpts []ExportOption
 	if cfg.historyID > 0 {
 		exportOpts = append(exportOpts, WithHistoryID(cfg.historyID))
 	}
 
+	log.DebugContext(ctx, "export", "phase", "exporting")
 	notify("exporting", "")
+	start := time.Now()
 
 	token, err := c.ExportScan(ctx, scanID, exportOpts...)
 	if err != nil {
 		return nil, fmt.Errorf("nessus: export scan: %w", err)
 	}
 
-	// Poll until ready.
+	log = log.With(slog.String("token", token))
+
+	log.DebugContext(ctx, "export", "phase", "polling")
 	notify("polling", token)
 	for {
 		if err := ctx.Err(); err != nil {
@@ -169,16 +175,25 @@ func (c *Client) ExportAndWait(ctx context.Context, scanID int, opts ...ExportOp
 		case <-ctx.Done():
 			return nil, fmt.Errorf("nessus: export wait: %w", ctx.Err())
 		case <-time.After(2 * time.Second):
+			log.DebugContext(ctx, "export", "phase", "polling")
 			notify("polling", token)
 		}
 	}
 
+	log.DebugContext(ctx, "export", "phase", "downloading")
 	notify("downloading", token)
 	data, err := c.DownloadExport(ctx, token)
 	if err != nil {
 		return nil, fmt.Errorf("nessus: download export: %w", err)
 	}
 
+	log.DebugContext(ctx, "export", "phase", "parsing")
 	notify("parsing", token)
-	return ParseNessusXML(data, cfg.minSeverity)
+	result, err := ParseNessusXML(data, cfg.minSeverity)
+	if err != nil {
+		return nil, err
+	}
+
+	log.InfoContext(ctx, "export complete", "duration", time.Since(start), "bytes", len(data))
+	return result, nil
 }

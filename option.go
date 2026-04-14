@@ -1,6 +1,7 @@
 package nessus
 
 import (
+	"log/slog"
 	"net/http"
 	"time"
 )
@@ -23,6 +24,7 @@ type clientConfig struct {
 	transport   http.RoundTripper
 	httpClient  *http.Client
 	userAgent   string
+	logger      *slog.Logger
 }
 
 type withAPIKeys struct{ accessKey, secretKey string }
@@ -70,3 +72,11 @@ func (o withUserAgent) apply(c *clientConfig) { c.userAgent = o.ua }
 
 // WithUserAgent overrides the User-Agent header.
 func WithUserAgent(ua string) ClientOption { return withUserAgent{ua} }
+
+type withLogger struct{ l *slog.Logger }
+
+func (o withLogger) apply(c *clientConfig) { c.logger = o.l }
+
+// WithLogger sets a structured logger for request/response logging.
+// By default the client discards all log output.
+func WithLogger(l *slog.Logger) ClientOption { return withLogger{l} }

@@ -1,8 +1,10 @@
 package nessus
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 )
@@ -12,6 +14,7 @@ type Client struct {
 	address    string
 	config     clientConfig
 	httpClient *http.Client
+	logger     *slog.Logger
 }
 
 // NewClient creates a new Nessus client.
@@ -60,10 +63,16 @@ func NewClient(address string, opts ...ClientOption) (*Client, error) {
 		}
 	}
 
+	logger := cfg.logger
+	if logger == nil {
+		logger = slog.New(nopHandler{})
+	}
+
 	return &Client{
 		address:    address,
 		config:     cfg,
 		httpClient: httpClient,
+		logger:     logger,
 	}, nil
 }
 
@@ -71,3 +80,10 @@ func NewClient(address string, opts ...ClientOption) (*Client, error) {
 func (c *Client) Close() error {
 	return nil
 }
+
+type nopHandler struct{}
+
+func (nopHandler) Enabled(context.Context, slog.Level) bool  { return false }
+func (nopHandler) Handle(context.Context, slog.Record) error  { return nil }
+func (h nopHandler) WithAttrs([]slog.Attr) slog.Handler       { return h }
+func (h nopHandler) WithGroup(string) slog.Handler             { return h }
