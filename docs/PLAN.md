@@ -39,6 +39,7 @@ Development roadmap for nessus.
 |------|-------------|:------:|
 | Unit tests | httptest-based mock server, table-driven tests | ✅ |
 | Smoke test | Live scanner test (`go run smoke.go`) | ✅ |
+| Basic example | Raw/API vs SDK/model output comparison (`go run ./examples/basic`) | ✅ |
 | GoDoc | Comments on all exported types and methods | ✅ |
 
 ## 🔧 Phase 5: Polish — ✅ Done
@@ -61,7 +62,6 @@ Add as needed:
 |------|-------------|
 | `ListFolders()` | Scan folder organization |
 | `ServerStatus()` | Scanner health check |
-| `ServerProperties()` | Scanner version, license info |
 
 ## 🤖 Phase 7: Agent & Scanner APIs — ✅ Done
 
@@ -69,8 +69,15 @@ Add as needed:
 |------|-------------|:------:|
 | Rename `Host` types | `Host` → `ScanHost`, `HostDetail` → `ScanHostDetail`, `HostVulnerability` → `ScanHostVulnerability` | ✅ |
 | `ListAgents(ctx, fn)` | Iterate agents with callback | ✅ |
+| `ListAgentsWithOptions(ctx, opts, fn)` | Iterate agents with pagination/sorting | ✅ |
 | `ListAgentGroups(ctx)` | List all agent groups | ✅ |
 | `ListScanners(ctx)` | List all scanners | ✅ |
+
+## 📋 Phase 8: Policies — ✅ Done
+
+| Task | Description | Status |
+|------|-------------|:------:|
+| `ListPolicies(ctx)` | List read-only scan policy summaries | ✅ |
 
 ## ❌ Non-Goals
 

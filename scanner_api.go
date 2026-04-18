@@ -27,17 +27,7 @@ func (c *Client) ListScanners(ctx context.Context) ([]Scanner, error) {
 
 	scanners := make([]Scanner, len(resp.Scanners))
 	for i, s := range resp.Scanners {
-		scanners[i] = Scanner{
-			ID:            s.ID,
-			UUID:          s.UUID,
-			Name:          s.Name,
-			Status:        s.Status,
-			Type:          s.Type,
-			Platform:      s.Platform,
-			UIVersion:     s.UIVersion,
-			EngineVersion: s.EngineVersion,
-			Linked:        s.Linked,
-		}
+		scanners[i] = Scanner(s)
 	}
 	return scanners, nil
 }

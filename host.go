@@ -45,13 +45,7 @@ func (c *Client) GetHostDetails(ctx context.Context, scanID, hostID int) (*ScanH
 
 	detail.Vulnerabilities = make([]ScanHostVulnerability, len(resp.Vulnerabilities))
 	for i, v := range resp.Vulnerabilities {
-		detail.Vulnerabilities[i] = ScanHostVulnerability{
-			PluginID:     v.PluginID,
-			PluginName:   v.PluginName,
-			PluginFamily: v.PluginFamily,
-			Severity:     v.Severity,
-			Count:        v.Count,
-		}
+		detail.Vulnerabilities[i] = ScanHostVulnerability(v)
 	}
 
 	return detail, nil

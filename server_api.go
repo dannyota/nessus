@@ -3,13 +3,13 @@ package nessus
 import "context"
 
 type apiServerProperties struct {
-	NessusType     string     `json:"nessus_type"`
-	ServerUUID     string     `json:"server_uuid"`
-	NessusUIVer    string     `json:"nessus_ui_version"`
-	Platform       string     `json:"platform"`
-	PluginSet      string     `json:"plugin_set"`
-	Expiration     int64      `json:"expiration"`
-	License        apiLicense `json:"license"`
+	NessusType  string     `json:"nessus_type"`
+	ServerUUID  string     `json:"server_uuid"`
+	NessusUIVer string     `json:"nessus_ui_version"`
+	Platform    string     `json:"platform"`
+	PluginSet   string     `json:"plugin_set"`
+	Expiration  int64      `json:"expiration"`
+	License     apiLicense `json:"license"`
 }
 
 type apiLicense struct {

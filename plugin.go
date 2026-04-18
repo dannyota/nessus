@@ -11,7 +11,7 @@ type apiPluginOutput struct {
 }
 
 type apiPluginOutputEntry struct {
-	Output string              `json:"plugin_output"`
+	Output string               `json:"plugin_output"`
 	Ports  map[string][]apiPort `json:"ports"`
 }
 
@@ -33,13 +33,13 @@ type apiPluginDetails struct {
 }
 
 type apiPluginAttrs struct {
-	PluginName string          `json:"plugin_name"`
-	Synopsis   string          `json:"synopsis"`
-	Description string         `json:"description"`
-	Solution   string          `json:"solution"`
-	SeeAlso    any             `json:"see_also"`
-	RiskInfo   apiRiskInfo     `json:"risk_information"`
-	RefInfo    apiRefInfo      `json:"ref_information"`
+	PluginName  string      `json:"plugin_name"`
+	Synopsis    string      `json:"synopsis"`
+	Description string      `json:"description"`
+	Solution    string      `json:"solution"`
+	SeeAlso     any         `json:"see_also"`
+	RiskInfo    apiRiskInfo `json:"risk_information"`
+	RefInfo     apiRefInfo  `json:"ref_information"`
 }
 
 type apiRiskInfo struct {
@@ -84,10 +84,7 @@ func (c *Client) GetPluginOutput(ctx context.Context, scanID, hostID, pluginID i
 		}
 		for port, infos := range entry.Ports {
 			for _, p := range infos {
-				result.Ports[port] = append(result.Ports[port], PortInfo{
-					Port:   p.Port,
-					Output: p.Output,
-				})
+				result.Ports[port] = append(result.Ports[port], PortInfo(p))
 			}
 		}
 	}

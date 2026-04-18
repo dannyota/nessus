@@ -3,6 +3,7 @@ package nessus
 import (
 	"bytes"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"strconv"
@@ -71,7 +72,7 @@ func ParseNessusXMLFromReader(r io.Reader, minSeverity ...int) (*ExportResult, e
 
 	for {
 		token, err := decoder.Token()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {

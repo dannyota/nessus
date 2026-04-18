@@ -3,6 +3,7 @@ package nessus
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -108,7 +109,7 @@ func TestNewClient(t *testing.T) {
 func TestAuthFailure(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte(`{"error":"Invalid Credentials"}`))
+		_, _ = w.Write([]byte(`{"error":"Invalid Credentials"}`))
 	}))
 	defer server.Close()
 
@@ -119,7 +120,7 @@ func TestAuthFailure(t *testing.T) {
 
 	var resp struct{}
 	err = c.getJSON(context.Background(), "/scans", &resp)
-	if err != ErrAuth {
+	if !errors.Is(err, ErrAuth) {
 		t.Errorf("err = %v, want ErrAuth", err)
 	}
 }

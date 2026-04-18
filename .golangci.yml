@@ -1,0 +1,62 @@
+version: "2"
+
+run:
+  timeout: 5m
+  go: "1.24"
+
+linters:
+  enable:
+    # Error handling
+    - errorlint
+    - errcheck
+
+    # Bugs and correctness
+    - staticcheck
+    - govet
+    - ineffassign
+    - bodyclose
+    - durationcheck
+    - nilerr
+
+    # Style and simplification
+    - unused
+    - unconvert
+    - wastedassign
+
+    # Security
+    - gosec
+
+    # Code quality
+    - gocritic
+    - noctx
+    - sloglint
+    - fatcontext
+    - perfsprint
+
+    # Parameters
+    - unparam
+
+    # Spelling
+    - misspell
+    - dupword
+
+  settings:
+    gosec:
+      excludes:
+        - G101 # tests, docs, and examples contain placeholder credentials and token field names
+        - G304 # examples intentionally read user-supplied local config paths
+        - G306 # example output files are local and ignored
+        - G402 # Nessus labs commonly use self-signed TLS; insecure mode is explicit opt-in
+    misspell:
+      locale: US
+
+formatters:
+  enable:
+    - gofmt
+    - gci
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(danny.vn/nessus)

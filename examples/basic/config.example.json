@@ -1,0 +1,6 @@
+{
+  "address": "https://nessus.example.com:8834",
+  "access_key": "<access-key>",
+  "secret_key": "<secret-key>",
+  "insecure_tls": true
+}

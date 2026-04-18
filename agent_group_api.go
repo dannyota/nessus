@@ -10,8 +10,12 @@ type apiAgentGroup struct {
 	ID                   int    `json:"id"`
 	Name                 string `json:"name"`
 	AgentsCount          int    `json:"agents_count"`
+	Owner                string `json:"owner"`
 	OwnerID              int    `json:"owner_id"`
 	OwnerName            string `json:"owner_name"`
+	Shared               int    `json:"shared"`
+	UserPermissions      int    `json:"user_permissions"`
+	Timestamp            int64  `json:"timestamp"`
 	CreationDate         int64  `json:"creation_date"`
 	LastModificationDate int64  `json:"last_modification_date"`
 }
@@ -25,15 +29,7 @@ func (c *Client) ListAgentGroups(ctx context.Context) ([]AgentGroup, error) {
 
 	groups := make([]AgentGroup, len(resp.Groups))
 	for i, g := range resp.Groups {
-		groups[i] = AgentGroup{
-			ID:                   g.ID,
-			Name:                 g.Name,
-			AgentsCount:          g.AgentsCount,
-			OwnerID:              g.OwnerID,
-			OwnerName:            g.OwnerName,
-			CreationDate:         g.CreationDate,
-			LastModificationDate: g.LastModificationDate,
-		}
+		groups[i] = AgentGroup(g)
 	}
 	return groups, nil
 }

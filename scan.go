@@ -88,18 +88,7 @@ func (c *Client) GetScan(ctx context.Context, scanID int) (*ScanDetail, error) {
 
 	hosts := make([]ScanHost, len(resp.Hosts))
 	for i, h := range resp.Hosts {
-		hosts[i] = ScanHost{
-			HostID:   h.HostID,
-			Hostname: h.Hostname,
-			IP:       h.IP,
-			OS:       h.OS,
-			Critical: h.Critical,
-			High:     h.High,
-			Medium:   h.Medium,
-			Low:      h.Low,
-			Info:     h.Info,
-			Progress: h.Progress,
-		}
+		hosts[i] = ScanHost(h)
 	}
 
 	return &ScanDetail{

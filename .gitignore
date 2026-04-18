@@ -1,2 +1,4 @@
 .nessus.json
 samples/
+examples/basic/config.local.json
+examples/basic/output/

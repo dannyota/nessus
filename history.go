@@ -25,11 +25,7 @@ func (c *Client) GetScanHistory(ctx context.Context, scanID int) ([]ScanHistory,
 
 	history := make([]ScanHistory, len(resp.History))
 	for i, h := range resp.History {
-		history[i] = ScanHistory{
-			HistoryID:    h.HistoryID,
-			Status:       h.Status,
-			CreationDate: h.CreationDate,
-		}
+		history[i] = ScanHistory(h)
 	}
 
 	return history, nil

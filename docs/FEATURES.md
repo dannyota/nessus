@@ -42,6 +42,7 @@ Nessus self-hosted REST API coverage.
 | Resource | SDK Method | API Endpoint | Status |
 |----------|-----------|--------------|:------:|
 | List agents | `ListAgents(ctx, fn)` | `GET /agents` | ✅ |
+| List agents with pagination/sorting | `ListAgentsWithOptions(ctx, opts, fn)` | `GET /agents?limit=...&offset=...` | ✅ |
 
 ## 📂 Agent Groups
 
@@ -49,20 +50,30 @@ Nessus self-hosted REST API coverage.
 |----------|-----------|--------------|:------:|
 | List agent groups | `ListAgentGroups(ctx)` | `GET /agent-groups` | ✅ |
 
+## 📋 Policies
+
+| Resource | SDK Method | API Endpoint | Status |
+|----------|-----------|--------------|:------:|
+| List policies | `ListPolicies(ctx)` | `GET /policies` | ✅ |
+
 ## 🔌 Scanners
 
 | Resource | SDK Method | API Endpoint | Status |
 |----------|-----------|--------------|:------:|
 | List scanners | `ListScanners(ctx)` | `GET /scanners` | ✅ |
 
+## 🖥️ Server
+
+| Resource | SDK Method | API Endpoint | Status |
+|----------|-----------|--------------|:------:|
+| Server properties | `ServerProperties(ctx)` | `GET /server/properties` | ✅ |
+
 ## 🚫 Not in Scope
 
 | Resource | API Endpoint | Reason |
 |----------|-------------|--------|
 | Folders | `GET /folders` | Not needed for ingestion |
-| Policies | `GET /policies` | Not needed for ingestion |
 | Server status | `GET /server/status` | Not needed for ingestion |
-| Server properties | `GET /server/properties` | Not needed for ingestion |
 | Create/launch scans | `POST /scans` | Read-only SDK |
 
 ## 📈 Summary
@@ -74,7 +85,9 @@ Nessus self-hosted REST API coverage.
 | Findings | 1 | 0 | 1 |
 | Export | 4 | 0 | 4 |
 | Parser | 1 | 0 | 1 |
-| Agents | 1 | 0 | 1 |
+| Agents | 2 | 0 | 2 |
 | Agent Groups | 1 | 0 | 1 |
+| Policies | 1 | 0 | 1 |
 | Scanners | 1 | 0 | 1 |
-| **Total** | **13** | **0** | **13** |
+| Server | 1 | 0 | 1 |
+| **Total** | **16** | **0** | **16** |

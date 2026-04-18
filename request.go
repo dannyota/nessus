@@ -34,7 +34,9 @@ func (c *Client) get(ctx context.Context, path string) ([]byte, error) {
 		}
 		return nil, fmt.Errorf("nessus: send request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -111,7 +113,9 @@ func (c *Client) post(ctx context.Context, path string, body any) ([]byte, error
 		}
 		return nil, fmt.Errorf("nessus: send request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {

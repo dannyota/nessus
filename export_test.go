@@ -24,12 +24,14 @@ func TestExportScan(t *testing.T) {
 		var body struct {
 			Format string `json:"format"`
 		}
-		json.NewDecoder(r.Body).Decode(&body)
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Errorf("decode body: %v", err)
+		}
 		if body.Format != "nessus" {
 			t.Errorf("format = %q, want nessus", body.Format)
 		}
 
-		w.Write([]byte(`{"token":"abc-123","file":0}`))
+		_, _ = w.Write([]byte(`{"token":"abc-123","file":0}`))
 	})
 
 	server := httptest.NewServer(mux)
@@ -56,7 +58,7 @@ func TestExportScanWithHistoryID(t *testing.T) {
 		if historyID != "100" {
 			t.Errorf("history_id = %q, want 100", historyID)
 		}
-		w.Write([]byte(`{"token":"def-456","file":0}`))
+		_, _ = w.Write([]byte(`{"token":"def-456","file":0}`))
 	})
 
 	server := httptest.NewServer(mux)
@@ -109,7 +111,7 @@ func TestExportScanFileIDFallback(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/scans/42/export", func(w http.ResponseWriter, r *http.Request) {
 		// Some Nessus versions return file ID, not token.
-		w.Write([]byte(`{"token":"","file":789}`))
+		_, _ = w.Write([]byte(`{"token":"","file":789}`))
 	})
 
 	server := httptest.NewServer(mux)
@@ -132,7 +134,7 @@ func TestExportScanFileIDFallback(t *testing.T) {
 func TestExportScanNoTokenOrFile(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/scans/42/export", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`{"token":"","file":0}`))
+		_, _ = w.Write([]byte(`{"token":"","file":0}`))
 	})
 
 	server := httptest.NewServer(mux)

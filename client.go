@@ -3,7 +3,7 @@ package nessus
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
+	"errors"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -26,7 +26,7 @@ type Client struct {
 // are ignored — the caller controls the full HTTP stack.
 func NewClient(address string, opts ...ClientOption) (*Client, error) {
 	if address == "" {
-		return nil, fmt.Errorf("nessus: address is required")
+		return nil, errors.New("nessus: address is required")
 	}
 
 	cfg := clientConfig{
@@ -38,7 +38,7 @@ func NewClient(address string, opts ...ClientOption) (*Client, error) {
 	}
 
 	if cfg.accessKey == "" || cfg.secretKey == "" {
-		return nil, fmt.Errorf("nessus: API keys are required (use WithAPIKeys)")
+		return nil, errors.New("nessus: API keys are required (use WithAPIKeys)")
 	}
 
 	address = strings.TrimRight(address, "/")
@@ -84,6 +84,6 @@ func (c *Client) Close() error {
 type nopHandler struct{}
 
 func (nopHandler) Enabled(context.Context, slog.Level) bool  { return false }
-func (nopHandler) Handle(context.Context, slog.Record) error  { return nil }
-func (h nopHandler) WithAttrs([]slog.Attr) slog.Handler       { return h }
-func (h nopHandler) WithGroup(string) slog.Handler             { return h }
+func (nopHandler) Handle(context.Context, slog.Record) error { return nil }
+func (h nopHandler) WithAttrs([]slog.Attr) slog.Handler      { return h }
+func (h nopHandler) WithGroup(string) slog.Handler           { return h }

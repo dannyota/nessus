@@ -21,12 +21,12 @@ func newTestClient(t *testing.T, fixtures map[string]string) *Client {
 			apiKeys := r.Header.Get("X-ApiKeys")
 			if apiKeys != "accessKey=test-access;secretKey=test-secret" {
 				w.WriteHeader(http.StatusUnauthorized)
-				w.Write([]byte(`{"error":"Invalid Credentials"}`))
+				_, _ = w.Write([]byte(`{"error":"Invalid Credentials"}`))
 				return
 			}
 
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(body))
+			_, _ = w.Write([]byte(body))
 		})
 	}
 

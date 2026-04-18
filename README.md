@@ -57,9 +57,11 @@ Read-only. See [FEATURES.md](docs/FEATURES.md) for details.
 | Hosts | Host details per scan | 1 |
 | Findings | Plugin output per host | 1 |
 | Export | Export, poll, download, parse | 4 |
-| Agents | List agents | 1 |
+| Agents | List agents, paginated listing | 2 |
 | Agent Groups | List agent groups | 1 |
+| Policies | List scan policies | 1 |
 | Scanners | List scanners | 1 |
+| Server | Server properties | 1 |
 
 ## ✅ Testing
 
@@ -75,6 +77,15 @@ NESSUS_ACCESS_KEY=your-access-key \
 NESSUS_SECRET_KEY=your-secret-key \
 go run smoke.go
 ```
+
+Basic read-only mapping check with raw and SDK output:
+
+```bash
+go run ./examples/basic
+```
+
+The example reads `.nessus.json` by default and writes local output under
+`examples/basic/output/`.
 
 ## 📖 Documentation
 

@@ -11,19 +11,23 @@ func TestListAgentGroups(t *testing.T) {
 			"groups": [
 				{
 					"id": 1,
-					"name": "production-servers",
+					"name": "group-a",
 					"agents_count": 6,
+					"owner": "owner-a",
 					"owner_id": 1,
-					"owner_name": "admin",
+					"owner_name": "owner-a",
+					"shared": 1,
+					"user_permissions": 128,
+					"timestamp": 1700000500,
 					"creation_date": 1700000000,
 					"last_modification_date": 1700001000
 				},
 				{
 					"id": 2,
-					"name": "staging-servers",
+					"name": "group-b",
 					"agents_count": 2,
 					"owner_id": 1,
-					"owner_name": "admin",
+					"owner_name": "owner-a",
 					"creation_date": 1700000100,
 					"last_modification_date": 1700001100
 				}
@@ -44,14 +48,26 @@ func TestListAgentGroups(t *testing.T) {
 	if g.ID != 1 {
 		t.Errorf("ID = %d", g.ID)
 	}
-	if g.Name != "production-servers" {
+	if g.Name != "group-a" {
 		t.Errorf("Name = %q", g.Name)
 	}
 	if g.AgentsCount != 6 {
 		t.Errorf("AgentsCount = %d", g.AgentsCount)
 	}
-	if g.OwnerName != "admin" {
+	if g.OwnerName != "owner-a" {
 		t.Errorf("OwnerName = %q", g.OwnerName)
+	}
+	if g.Owner != "owner-a" {
+		t.Errorf("Owner = %q", g.Owner)
+	}
+	if g.Shared != 1 {
+		t.Errorf("Shared = %d", g.Shared)
+	}
+	if g.UserPermissions != 128 {
+		t.Errorf("UserPermissions = %d", g.UserPermissions)
+	}
+	if g.Timestamp != 1700000500 {
+		t.Errorf("Timestamp = %d", g.Timestamp)
 	}
 	if g.CreationDate != 1700000000 {
 		t.Errorf("CreationDate = %d", g.CreationDate)

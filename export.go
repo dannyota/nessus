@@ -2,8 +2,10 @@ package nessus
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
+	"strconv"
 	"time"
 )
 
@@ -82,16 +84,16 @@ func (c *Client) ExportScan(ctx context.Context, scanID int, opts ...ExportOptio
 		return resp.Token, nil
 	}
 	if resp.File > 0 {
-		return fmt.Sprintf("%d", resp.File), nil
+		return strconv.Itoa(resp.File), nil
 	}
-	return "", fmt.Errorf("nessus: export response missing token and file ID")
+	return "", errors.New("nessus: export response missing token and file ID")
 }
 
 // ExportStatus checks if an export is ready for download.
 // Returns "ready" or "loading".
 func (c *Client) ExportStatus(ctx context.Context, token string) (string, error) {
 	if !validToken(token) {
-		return "", fmt.Errorf("nessus: invalid export token")
+		return "", errors.New("nessus: invalid export token")
 	}
 	var resp apiExportStatus
 	if err := c.getJSON(ctx, fmt.Sprintf("/tokens/%s/status", token), &resp); err != nil {
@@ -103,7 +105,7 @@ func (c *Client) ExportStatus(ctx context.Context, token string) (string, error)
 // DownloadExport downloads a completed export as raw bytes.
 func (c *Client) DownloadExport(ctx context.Context, token string) ([]byte, error) {
 	if !validToken(token) {
-		return nil, fmt.Errorf("nessus: invalid export token")
+		return nil, errors.New("nessus: invalid export token")
 	}
 	return c.get(ctx, fmt.Sprintf("/tokens/%s/download", token))
 }
@@ -114,7 +116,7 @@ func validToken(token string) bool {
 		return false
 	}
 	for _, r := range token {
-		if !(r >= 'a' && r <= 'z') && !(r >= 'A' && r <= 'Z') && !(r >= '0' && r <= '9') && r != '-' {
+		if r != '-' && (r < '0' || r > '9') && (r < 'A' || r > 'Z') && (r < 'a' || r > 'z') {
 			return false
 		}
 	}

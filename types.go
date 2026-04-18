@@ -2,16 +2,16 @@ package nessus
 
 // Scan represents a scan summary from the scan list.
 type Scan struct {
-	ID             int
-	Name           string
-	Status         string // "completed", "running", "paused", "canceled", "empty"
-	FolderID       int
-	Enabled        bool
-	Control        bool
-	StartTime      int64 // Unix timestamp, 0 if never run
-	EndTime        int64 // Unix timestamp, 0 if never run
-	LastModified   int64 // Unix timestamp
-	CreationDate   int64 // Unix timestamp
+	ID              int
+	Name            string
+	Status          string // "completed", "running", "paused", "canceled", "empty"
+	FolderID        int
+	Enabled         bool
+	Control         bool
+	StartTime       int64 // Unix timestamp, 0 if never run
+	EndTime         int64 // Unix timestamp, 0 if never run
+	LastModified    int64 // Unix timestamp
+	CreationDate    int64 // Unix timestamp
 	UserPermissions int
 }
 
@@ -23,28 +23,28 @@ type ScanDetail struct {
 
 // ScanInfo contains scan metadata from the detail response.
 type ScanInfo struct {
-	Name       string
-	Status     string
-	Policy     string
-	Scanner    string
-	Targets    string
-	StartTime  int64
-	EndTime    int64
-	HostCount  int
+	Name      string
+	Status    string
+	Policy    string
+	Scanner   string
+	Targets   string
+	StartTime int64
+	EndTime   int64
+	HostCount int
 }
 
 // ScanHost represents a scanned host within a scan result.
 type ScanHost struct {
-	HostID       int
-	Hostname     string
-	IP           string
-	OS           string
-	Critical     int
-	High         int
-	Medium       int
-	Low          int
-	Info         int
-	Progress     string
+	HostID   int
+	Hostname string
+	IP       string
+	OS       string
+	Critical int
+	High     int
+	Medium   int
+	Low      int
+	Info     int
+	Progress string
 }
 
 // ScanHostDetail contains host info and the vulnerability list from the detail endpoint.
@@ -63,15 +63,15 @@ type ScanHostVulnerability struct {
 	PluginID     int
 	PluginName   string
 	PluginFamily string
-	Severity     int    // SeverityInfo through SeverityCritical
+	Severity     int // SeverityInfo through SeverityCritical
 	Count        int
 }
 
 // PluginOutput represents detailed finding output for a specific plugin on a host.
 type PluginOutput struct {
-	Output      string
-	Ports       map[string][]PortInfo
-	Info        PluginInfo
+	Output string
+	Ports  map[string][]PortInfo
+	Info   PluginInfo
 }
 
 // PortInfo represents output for a specific port.
@@ -138,21 +138,31 @@ type Finding struct {
 
 // Agent represents a Nessus agent connected to the manager.
 type Agent struct {
-	ID           int
-	UUID         string
-	Name         string
-	Status       string   // "online", "offline", "unlinked"
-	Platform     string   // "LINUX", "WINDOWS", "DARWIN"
-	Distro       string   // e.g. "es9-x86-64"
-	IP           string
-	MACAddresses []string // parsed from JSON-encoded string in API response
-	CoreVersion  string
-	CoreBuild    string
-	LinkedOn     int64 // Unix timestamp
-	LastConnect  int64 // Unix timestamp
-	LastScanned  int64 // Unix timestamp
-	Groups       []string
-	PluginFeedID string
+	ID               int
+	TotalAgents      int
+	UUID             string
+	Name             string
+	Status           string // "online", "offline", "unlinked"
+	ClusterGroupName string
+	LinkStatus       string // e.g. "linked"
+	LinkGroups       string // raw link group summary from the API
+	NodeID           int
+	AutoUnlinked     int
+	UnlinkedOn       int64 // Unix timestamp, 0 if still linked
+	Profile          string
+	ProfileUUID      string
+	Platform         string // "LINUX", "WINDOWS", "DARWIN"
+	Distro           string // e.g. "es9-x86-64"
+	UpgradeDistro    string
+	IP               string
+	MACAddresses     []string // parsed from JSON-encoded string in API response
+	CoreVersion      string
+	CoreBuild        string
+	LinkedOn         int64 // Unix timestamp
+	LastConnect      int64 // Unix timestamp
+	LastScanned      int64 // Unix timestamp
+	Groups           []string
+	PluginFeedID     string
 }
 
 // AgentGroup represents a Nessus agent group.
@@ -160,8 +170,31 @@ type AgentGroup struct {
 	ID                   int
 	Name                 string
 	AgentsCount          int
+	Owner                string
 	OwnerID              int
 	OwnerName            string
+	Shared               int
+	UserPermissions      int
+	Timestamp            int64
+	CreationDate         int64
+	LastModificationDate int64
+}
+
+// Policy represents a Nessus scan policy summary.
+type Policy struct {
+	ID                   int
+	Name                 string
+	Description          string
+	Owner                string
+	OwnerID              int
+	Visibility           string
+	Shared               int
+	UserPermissions      int
+	TemplateUUID         string
+	IsAgent              bool
+	IsSCAP               int
+	HasCredentials       int
+	NoTarget             string
 	CreationDate         int64
 	LastModificationDate int64
 }
@@ -197,20 +230,20 @@ type ServerInfo struct {
 
 // PluginInfo contains plugin metadata from the finding detail.
 type PluginInfo struct {
-	PluginID     int
-	Name         string
-	Family       string
-	Severity     int
-	Synopsis     string
-	Description  string
-	Solution     string
-	SeeAlso      []string
-	RiskFactor   string
-	CVE          []string
-	BID          []string
-	XREF         []string
-	CVSSVector   string
-	CVSSBaseScore float64
-	CVSS3Vector  string
+	PluginID       int
+	Name           string
+	Family         string
+	Severity       int
+	Synopsis       string
+	Description    string
+	Solution       string
+	SeeAlso        []string
+	RiskFactor     string
+	CVE            []string
+	BID            []string
+	XREF           []string
+	CVSSVector     string
+	CVSSBaseScore  float64
+	CVSS3Vector    string
 	CVSS3BaseScore float64
 }
